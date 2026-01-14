@@ -3,7 +3,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
+import Spaces from "./pages/Spaces";
+import Clients from "./pages/Clients";
+import MeterReadings from "./pages/MeterReadings";
+import Invoices from "./pages/Invoices";
+import Distribution from "./pages/Distribution";
+import ConsumptionNotes from "./pages/ConsumptionNotes";
+import History from "./pages/History";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -15,8 +23,15 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/spaces" element={<Spaces />} />
+          <Route path="/clients" element={<Clients />} />
+          <Route path="/meter-readings" element={<MeterReadings />} />
+          <Route path="/invoices" element={<Invoices />} />
+          <Route path="/distribution" element={<Distribution />} />
+          <Route path="/consumption-notes" element={<ConsumptionNotes />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
