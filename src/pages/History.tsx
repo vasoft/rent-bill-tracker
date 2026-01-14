@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { History as HistoryIcon, TrendingUp, BarChart3, LineChart as LineChartIcon } from 'lucide-react';
-import { UtilityType } from '@/types/utility';
+
 
 const History = () => {
   const [selectedUtility, setSelectedUtility] = useState<string>('all');

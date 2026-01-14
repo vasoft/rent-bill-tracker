@@ -27,7 +27,7 @@ import {
   DialogTrigger 
 } from '@/components/ui/dialog';
 import { ClipboardList, Calendar, Eye, Printer, Download, FileText } from 'lucide-react';
-import { UtilityType } from '@/types/utility';
+
 
 const ConsumptionNotes = () => {
   const [periodFilter, setPeriodFilter] = useState<string>('2025-12');
