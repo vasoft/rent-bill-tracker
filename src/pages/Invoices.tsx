@@ -21,7 +21,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Plus, Search, FileText, Calendar, Eye } from 'lucide-react';
-import { UtilityType } from '@/types/utility';
+
 
 const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState('');

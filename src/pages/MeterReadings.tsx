@@ -21,7 +21,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Plus, Search, Gauge, Calendar, Zap, Flame } from 'lucide-react';
-import { UtilityType } from '@/types/utility';
+
 
 const MeterReadings = () => {
   const [searchTerm, setSearchTerm] = useState('');

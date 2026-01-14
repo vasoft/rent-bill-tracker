@@ -20,7 +20,7 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { Calculator, Play, Calendar, CheckCircle } from 'lucide-react';
-import { UtilityType } from '@/types/utility';
+
 
 const Distribution = () => {
   const [periodFilter, setPeriodFilter] = useState<string>('2025-12');
