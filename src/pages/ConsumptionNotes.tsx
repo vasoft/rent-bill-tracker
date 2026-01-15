@@ -26,7 +26,9 @@ import {
   DialogTitle, 
   DialogTrigger 
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ClipboardList, Calendar, Eye, Printer, Download, FileText } from 'lucide-react';
+import ConsumptionNoteDocument from '@/components/consumption-notes/ConsumptionNoteDocument';
 
 
 const ConsumptionNotes = () => {
@@ -228,18 +230,19 @@ const ConsumptionNotes = () => {
                             <Eye className="w-4 h-4" />
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
+                        <DialogContent className="max-w-4xl max-h-[90vh]">
                           <DialogHeader>
                             <DialogTitle className="flex items-center gap-2">
                               <ClipboardList className="w-5 h-5 text-primary" />
                               Notă de Consum - {client.name}
                             </DialogTitle>
                           </DialogHeader>
-                          <ConsumptionNotePreview 
-                            client={client} 
-                            period={periodFilter}
-                            getUtilityColor={getUtilityColor}
-                          />
+                          <ScrollArea className="max-h-[75vh] pr-4">
+                            <ConsumptionNoteDocument 
+                              client={client} 
+                              period={periodFilter}
+                            />
+                          </ScrollArea>
                         </DialogContent>
                       </Dialog>
                     </TableCell>
@@ -251,105 +254,6 @@ const ConsumptionNotes = () => {
         </div>
       </div>
     </MainLayout>
-  );
-};
-
-interface ConsumptionNotePreviewProps {
-  client: any;
-  period: string;
-  getUtilityColor: (type: UtilityType) => string;
-}
-
-const ConsumptionNotePreview = ({ client, period, getUtilityColor }: ConsumptionNotePreviewProps) => {
-  const formatPeriod = (period: string) => {
-    const [year, month] = period.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
-  };
-
-  return (
-    <div className="space-y-6 p-4 bg-muted/30 rounded-lg">
-      {/* Header */}
-      <div className="flex justify-between items-start border-b border-border pb-4">
-        <div>
-          <h3 className="font-bold text-lg">NOTĂ DE CONSUM</h3>
-          <p className="text-sm text-muted-foreground">Utilități și Servicii</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm"><span className="text-muted-foreground">Perioada:</span> <span className="font-semibold capitalize">{formatPeriod(period)}</span></p>
-          <p className="text-sm"><span className="text-muted-foreground">Client:</span> <span className="font-semibold">{client.name}</span></p>
-        </div>
-      </div>
-
-      {/* Client Info */}
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <div>
-          <p className="text-muted-foreground">Tip client:</p>
-          <p className="font-medium">{client.type === 'PJ' ? 'Persoană Juridică' : 'Persoană Fizică'}</p>
-        </div>
-        <div>
-          <p className="text-muted-foreground">Spații închiriate:</p>
-          <p className="font-medium">{client.spaces.join(', ')}</p>
-        </div>
-      </div>
-
-      {/* Utilities Table */}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Utilitate/Serviciu</TableHead>
-            <TableHead className="text-right">Consum</TableHead>
-            <TableHead className="text-right">Valoare (lei)</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {UTILITIES.map(utility => {
-            const data = client.byUtility[utility.id];
-            if (!data || data.value === 0) return null;
-            
-            return (
-              <TableRow key={utility.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={getUtilityColor(utility.id)}>
-                      {utility.name}
-                    </Badge>
-                    <span className="text-sm">{utility.fullName}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  {data.consumption > 0 
-                    ? `${data.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} ${utility.unit}`
-                    : '-'
-                  }
-                </TableCell>
-                <TableCell className="text-right font-medium">
-                  {data.value.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
-                </TableCell>
-              </TableRow>
-            );
-          })}
-          <TableRow className="border-t-2">
-            <TableCell colSpan={2} className="font-bold text-right">TOTAL DE PLATĂ:</TableCell>
-            <TableCell className="text-right font-bold text-lg">
-              {client.total.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-4 border-t border-border">
-        <Button variant="outline" className="gap-2">
-          <Printer className="w-4 h-4" />
-          Printează
-        </Button>
-        <Button className="gap-2">
-          <Download className="w-4 h-4" />
-          Descarcă PDF
-        </Button>
-      </div>
-    </div>
   );
 };
 
