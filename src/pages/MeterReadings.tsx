@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { meterReadings, spaces, clients } from '@/data/mockData';
-import { UTILITIES, UtilityType } from '@/types/utility';
+import { meterReadings as initialReadings, spaces, clients } from '@/data/mockData';
+import { UTILITIES, UtilityType, MeterReading } from '@/types/utility';
 import { 
   Table, 
   TableBody, 
@@ -20,15 +20,20 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Plus, Search, Gauge, Calendar, Zap, Flame } from 'lucide-react';
+import { Plus, Search, Gauge, Calendar, Zap, Flame, Pencil } from 'lucide-react';
+import MeterReadingForm from '@/components/meter-readings/MeterReadingForm';
+import { toast } from 'sonner';
 
 
 const MeterReadings = () => {
+  const [readings, setReadings] = useState<MeterReading[]>(initialReadings);
   const [searchTerm, setSearchTerm] = useState('');
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('2025-12');
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingReading, setEditingReading] = useState<MeterReading | null>(null);
 
-  const readingsWithDetails = meterReadings.map(reading => {
+  const readingsWithDetails = readings.map(reading => {
     const space = spaces.find(s => s.id === reading.spaceId);
     const client = space?.clientId ? clients.find(c => c.id === space.clientId) : null;
     const utility = UTILITIES.find(u => u.id === reading.utilityType);
@@ -70,6 +75,36 @@ const MeterReadings = () => {
       SSV: 'bg-chart-sm/10 text-chart-sm border-chart-sm/30',
     };
     return colors[type] || 'bg-muted text-muted-foreground';
+  };
+
+  const handleAddReading = () => {
+    setEditingReading(null);
+    setFormOpen(true);
+  };
+
+  const handleEditReading = (reading: MeterReading) => {
+    setEditingReading(reading);
+    setFormOpen(true);
+  };
+
+  const handleSaveReading = (readingData: Omit<MeterReading, 'id'> & { id?: string }) => {
+    if (readingData.id) {
+      // Editing existing reading
+      setReadings(prev => prev.map(r => 
+        r.id === readingData.id 
+          ? { ...readingData, id: readingData.id } as MeterReading
+          : r
+      ));
+      toast.success('Citirea a fost actualizată cu succes!');
+    } else {
+      // Adding new reading
+      const newReading: MeterReading = {
+        ...readingData,
+        id: `MR${Date.now()}`,
+      };
+      setReadings(prev => [...prev, newReading]);
+      toast.success('Citirea a fost adăugată cu succes!');
+    }
   };
 
   const totalConsumption = filteredReadings.reduce((sum, r) => sum + r.consumption, 0);
@@ -153,11 +188,19 @@ const MeterReadings = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleAddReading}>
             <Plus className="w-4 h-4" />
             Adaugă Citire
           </Button>
         </div>
+
+        {/* Form Modal */}
+        <MeterReadingForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          editingReading={editingReading}
+          onSave={handleSaveReading}
+        />
 
         {/* Table */}
         <div className="utility-card overflow-hidden">
@@ -172,6 +215,7 @@ const MeterReadings = () => {
                 <TableHead className="text-right">Constantă</TableHead>
                 <TableHead className="text-right">Consum</TableHead>
                 <TableHead>Data Citirii</TableHead>
+                <TableHead className="w-[60px]">Acțiuni</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -193,6 +237,16 @@ const MeterReadings = () => {
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(reading.readingDate).toLocaleDateString('ro-RO')}
+                  </TableCell>
+                  <TableCell>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-8 w-8"
+                      onClick={() => handleEditReading(reading)}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
