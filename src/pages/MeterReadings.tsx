@@ -200,6 +200,7 @@ const MeterReadings = () => {
           onOpenChange={setFormOpen}
           editingReading={editingReading}
           onSave={handleSaveReading}
+          allReadings={readings}
         />
 
         {/* Table */}

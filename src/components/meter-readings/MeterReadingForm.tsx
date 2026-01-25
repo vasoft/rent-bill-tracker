@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,7 +29,42 @@ import {
 } from '@/components/ui/select';
 import { spaces, clients } from '@/data/mockData';
 import { UTILITIES, MeterReading, UtilityType } from '@/types/utility';
-import { Gauge, Calculator } from 'lucide-react';
+import { Gauge, Calculator, Info } from 'lucide-react';
+
+// Helper to get previous period from YYYY-MM format
+const getPreviousPeriod = (period: string): string => {
+  const [year, month] = period.split('-').map(Number);
+  if (month === 1) {
+    return `${year - 1}-12`;
+  }
+  return `${year}-${String(month - 1).padStart(2, '0')}`;
+};
+
+// Generate available periods (last 12 months + next month)
+const generatePeriods = (): { value: string; label: string }[] => {
+  const periods: { value: string; label: string }[] = [];
+  const now = new Date();
+  const months = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 
+                  'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+  
+  // Add next month
+  const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  periods.push({
+    value: `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}`,
+    label: `${months[nextMonth.getMonth()]} ${nextMonth.getFullYear()}`
+  });
+  
+  // Add current and previous months
+  for (let i = 0; i <= 12; i++) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    periods.push({
+      value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
+      label: `${months[date.getMonth()]} ${date.getFullYear()}`
+    });
+  }
+  
+  return periods;
+};
 
 const meterReadingSchema = z.object({
   spaceId: z.string().min(1, 'Selectați spațiul'),
@@ -52,17 +87,20 @@ interface MeterReadingFormProps {
   onOpenChange: (open: boolean) => void;
   editingReading?: MeterReading | null;
   onSave: (reading: Omit<MeterReading, 'id'> & { id?: string }) => void;
+  allReadings: MeterReading[]; // Pass all readings to find previous period data
 }
 
-const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterReadingFormProps) => {
+const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadings }: MeterReadingFormProps) => {
   const isEditing = !!editingReading;
+  const periods = generatePeriods();
+  const [previousReadingInfo, setPreviousReadingInfo] = useState<string | null>(null);
   
   const form = useForm<MeterReadingFormData>({
     resolver: zodResolver(meterReadingSchema),
     defaultValues: {
       spaceId: '',
       utilityType: '',
-      period: '2025-12',
+      period: periods[0]?.value || '2026-01', // Default to next period
       indexOld: 0,
       indexNew: 0,
       constant: 1,
@@ -71,11 +109,54 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
     },
   });
 
+  const watchedSpaceId = form.watch('spaceId');
   const watchedUtility = form.watch('utilityType');
+  const watchedPeriod = form.watch('period');
   const watchedIndexOld = form.watch('indexOld');
   const watchedIndexNew = form.watch('indexNew');
   const watchedConstant = form.watch('constant');
   const watchedPcs = form.watch('pcs');
+
+  // Auto-populate from previous period when space, utility, or period changes
+  const updateFromPreviousPeriod = useCallback(() => {
+    if (isEditing || !watchedSpaceId || !watchedUtility || !watchedPeriod) {
+      setPreviousReadingInfo(null);
+      return;
+    }
+
+    const previousPeriod = getPreviousPeriod(watchedPeriod);
+    const previousReading = allReadings.find(
+      r => r.spaceId === watchedSpaceId && 
+           r.utilityType === watchedUtility && 
+           r.period === previousPeriod
+    );
+
+    if (previousReading) {
+      // Auto-populate indexOld with previous indexNew
+      form.setValue('indexOld', previousReading.indexNew);
+      // Auto-populate constant from previous reading
+      form.setValue('constant', previousReading.constant);
+      // Auto-populate PCS if it's natural gas
+      if (previousReading.pcs !== undefined) {
+        form.setValue('pcs', previousReading.pcs);
+      }
+      
+      const months = ['Ian', 'Feb', 'Mar', 'Apr', 'Mai', 'Iun', 'Iul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const [year, month] = previousPeriod.split('-').map(Number);
+      setPreviousReadingInfo(
+        `Preluat din ${months[month - 1]} ${year}: Index=${previousReading.indexNew}, K=${previousReading.constant}${previousReading.pcs ? `, PCS=${previousReading.pcs}` : ''}`
+      );
+    } else {
+      setPreviousReadingInfo(null);
+      // Reset to defaults if no previous reading found
+      form.setValue('indexOld', 0);
+      form.setValue('constant', 1);
+    }
+  }, [isEditing, watchedSpaceId, watchedUtility, watchedPeriod, allReadings, form]);
+
+  useEffect(() => {
+    updateFromPreviousPeriod();
+  }, [updateFromPreviousPeriod]);
 
   const calculatedConsumption = (() => {
     const diff = (watchedIndexNew || 0) - (watchedIndexOld || 0);
@@ -101,19 +182,21 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
         pcs: editingReading.pcs,
         readingDate: editingReading.readingDate,
       });
+      setPreviousReadingInfo(null);
     } else {
       form.reset({
         spaceId: '',
         utilityType: '',
-        period: '2025-12',
+        period: periods[0]?.value || '2026-01',
         indexOld: 0,
         indexNew: 0,
         constant: 1,
         pcs: undefined,
         readingDate: new Date().toISOString().split('T')[0],
       });
+      setPreviousReadingInfo(null);
     }
-  }, [editingReading, form, open]);
+  }, [editingReading, form, open, periods]);
 
   const onSubmit = (data: MeterReadingFormData) => {
     const consumption = (() => {
@@ -229,10 +312,11 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="2025-12">Decembrie 2025</SelectItem>
-                        <SelectItem value="2025-11">Noiembrie 2025</SelectItem>
-                        <SelectItem value="2025-10">Octombrie 2025</SelectItem>
-                        <SelectItem value="2025-09">Septembrie 2025</SelectItem>
+                        {periods.map((p) => (
+                          <SelectItem key={p.value} value={p.value}>
+                            {p.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -255,6 +339,14 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
               />
             </div>
 
+            {/* Previous reading info banner */}
+            {previousReadingInfo && (
+              <div className="flex items-center gap-2 p-3 bg-primary/10 border border-primary/20 rounded-lg text-sm">
+                <Info className="w-4 h-4 text-primary shrink-0" />
+                <span className="text-primary">{previousReadingInfo}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-3 gap-4">
               <FormField
                 control={form.control}
@@ -263,7 +355,13 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
                   <FormItem>
                     <FormLabel>Index Vechi</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.001" {...field} />
+                      <Input 
+                        type="number" 
+                        step="0.001" 
+                        {...field} 
+                        className={previousReadingInfo ? "bg-muted" : ""}
+                        readOnly={!!previousReadingInfo && !isEditing}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -277,7 +375,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
                   <FormItem>
                     <FormLabel>Index Nou</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.001" {...field} />
+                      <Input type="number" step="0.001" {...field} autoFocus />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -289,9 +387,14 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
                 name="constant"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Constantă</FormLabel>
+                    <FormLabel>Constantă (K)</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.001" {...field} />
+                      <Input 
+                        type="number" 
+                        step="0.001" 
+                        {...field}
+                        className={previousReadingInfo ? "bg-muted" : ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
