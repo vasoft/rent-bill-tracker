@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -40,8 +40,8 @@ const getPreviousPeriod = (period: string): string => {
   return `${year}-${String(month - 1).padStart(2, '0')}`;
 };
 
-// Generate available periods (last 12 months + next month) - memoized outside component
-const PERIODS = (() => {
+// Generate available periods (last 12 months + next month)
+const generatePeriods = (): { value: string; label: string }[] => {
   const periods: { value: string; label: string }[] = [];
   const now = new Date();
   const months = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 
@@ -64,7 +64,7 @@ const PERIODS = (() => {
   }
   
   return periods;
-})();
+};
 
 const meterReadingSchema = z.object({
   spaceId: z.string().min(1, 'Selectați spațiul'),
@@ -92,15 +92,15 @@ interface MeterReadingFormProps {
 
 const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadings }: MeterReadingFormProps) => {
   const isEditing = !!editingReading;
+  const periods = generatePeriods();
   const [previousReadingInfo, setPreviousReadingInfo] = useState<string | null>(null);
-  const [hasAutoPopulated, setHasAutoPopulated] = useState(false);
   
   const form = useForm<MeterReadingFormData>({
     resolver: zodResolver(meterReadingSchema),
     defaultValues: {
       spaceId: '',
       utilityType: '',
-      period: PERIODS[0]?.value || '2026-01', // Default to next period
+      period: periods[0]?.value || '2026-01', // Default to next period
       indexOld: 0,
       indexNew: 0,
       constant: 1,
@@ -118,8 +118,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
   const watchedPcs = form.watch('pcs');
 
   // Auto-populate from previous period when space, utility, or period changes
-  useEffect(() => {
-    // Skip if editing or if required fields are not selected
+  const updateFromPreviousPeriod = useCallback(() => {
     if (isEditing || !watchedSpaceId || !watchedUtility || !watchedPeriod) {
       setPreviousReadingInfo(null);
       return;
@@ -134,12 +133,12 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
 
     if (previousReading) {
       // Auto-populate indexOld with previous indexNew
-      form.setValue('indexOld', previousReading.indexNew, { shouldValidate: true });
+      form.setValue('indexOld', previousReading.indexNew);
       // Auto-populate constant from previous reading
-      form.setValue('constant', previousReading.constant, { shouldValidate: true });
+      form.setValue('constant', previousReading.constant);
       // Auto-populate PCS if it's natural gas
       if (previousReading.pcs !== undefined) {
-        form.setValue('pcs', previousReading.pcs, { shouldValidate: true });
+        form.setValue('pcs', previousReading.pcs);
       }
       
       const months = ['Ian', 'Feb', 'Mar', 'Apr', 'Mai', 'Iun', 'Iul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -147,12 +146,17 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
       setPreviousReadingInfo(
         `Preluat din ${months[month - 1]} ${year}: Index=${previousReading.indexNew}, K=${previousReading.constant}${previousReading.pcs ? `, PCS=${previousReading.pcs}` : ''}`
       );
-      setHasAutoPopulated(true);
     } else {
       setPreviousReadingInfo(null);
-      setHasAutoPopulated(false);
+      // Reset to defaults if no previous reading found
+      form.setValue('indexOld', 0);
+      form.setValue('constant', 1);
     }
   }, [isEditing, watchedSpaceId, watchedUtility, watchedPeriod, allReadings, form]);
+
+  useEffect(() => {
+    updateFromPreviousPeriod();
+  }, [updateFromPreviousPeriod]);
 
   const calculatedConsumption = (() => {
     const diff = (watchedIndexNew || 0) - (watchedIndexOld || 0);
@@ -166,10 +170,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
   const utilityInfo = UTILITIES.find(u => u.id === watchedUtility);
   const showPcs = watchedUtility === 'GN';
 
-  // Reset form only when dialog opens/closes or when switching between edit/add mode
   useEffect(() => {
-    if (!open) return; // Only run when dialog is open
-    
     if (editingReading) {
       form.reset({
         spaceId: editingReading.spaceId,
@@ -182,12 +183,11 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
         readingDate: editingReading.readingDate,
       });
       setPreviousReadingInfo(null);
-      setHasAutoPopulated(false);
     } else {
       form.reset({
         spaceId: '',
         utilityType: '',
-        period: PERIODS[0]?.value || '2026-01',
+        period: periods[0]?.value || '2026-01',
         indexOld: 0,
         indexNew: 0,
         constant: 1,
@@ -195,9 +195,8 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
         readingDate: new Date().toISOString().split('T')[0],
       });
       setPreviousReadingInfo(null);
-      setHasAutoPopulated(false);
     }
-  }, [editingReading, form, open]);
+  }, [editingReading, form, open, periods]);
 
   const onSubmit = (data: MeterReadingFormData) => {
     const consumption = (() => {
@@ -313,7 +312,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {PERIODS.map((p) => (
+                        {periods.map((p) => (
                           <SelectItem key={p.value} value={p.value}>
                             {p.label}
                           </SelectItem>
