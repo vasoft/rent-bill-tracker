@@ -419,7 +419,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-primary">
-                  {calculatedConsumption.toLocaleString('ro-RO', { 
+                  {Math.max(0, calculatedConsumption).toLocaleString('ro-RO', { 
                     minimumFractionDigits: 2, 
                     maximumFractionDigits: 2 
                   })}
