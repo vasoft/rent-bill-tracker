@@ -43,7 +43,6 @@ export interface MeterReading {
   constant: number;
   pcs?: number; // For natural gas
   consumption: number;
-  readingDate: string;
 }
 
 export interface SupplierInvoice {

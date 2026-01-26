@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -29,17 +29,35 @@ import {
 } from '@/components/ui/select';
 import { spaces, clients } from '@/data/mockData';
 import { UTILITIES, MeterReading, UtilityType } from '@/types/utility';
-import { Gauge, Calculator } from 'lucide-react';
+import { Gauge, Calculator, Info } from 'lucide-react';
+
+const MONTHS = [
+  { value: '01', label: 'Ianuarie' },
+  { value: '02', label: 'Februarie' },
+  { value: '03', label: 'Martie' },
+  { value: '04', label: 'Aprilie' },
+  { value: '05', label: 'Mai' },
+  { value: '06', label: 'Iunie' },
+  { value: '07', label: 'Iulie' },
+  { value: '08', label: 'August' },
+  { value: '09', label: 'Septembrie' },
+  { value: '10', label: 'Octombrie' },
+  { value: '11', label: 'Noiembrie' },
+  { value: '12', label: 'Decembrie' },
+];
+
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
 const meterReadingSchema = z.object({
   spaceId: z.string().min(1, 'Selectați spațiul'),
   utilityType: z.string().min(1, 'Selectați utilitatea'),
-  period: z.string().min(1, 'Selectați perioada'),
+  periodMonth: z.string().min(1, 'Selectați luna'),
+  periodYear: z.string().min(1, 'Selectați anul'),
   indexOld: z.coerce.number().min(0, 'Index vechi trebuie să fie pozitiv'),
   indexNew: z.coerce.number().min(0, 'Index nou trebuie să fie pozitiv'),
   constant: z.coerce.number().min(0.001, 'Constanta trebuie să fie mai mare ca 0'),
   pcs: z.coerce.number().optional(),
-  readingDate: z.string().min(1, 'Selectați data citirii'),
 }).refine((data) => data.indexNew >= data.indexOld, {
   message: "Indexul nou trebuie să fie mai mare sau egal cu cel vechi",
   path: ["indexNew"],
@@ -52,30 +70,70 @@ interface MeterReadingFormProps {
   onOpenChange: (open: boolean) => void;
   editingReading?: MeterReading | null;
   onSave: (reading: Omit<MeterReading, 'id'> & { id?: string }) => void;
+  allReadings: MeterReading[];
 }
 
-const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterReadingFormProps) => {
+const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadings }: MeterReadingFormProps) => {
   const isEditing = !!editingReading;
+  
+  const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const currentYearStr = String(currentYear);
   
   const form = useForm<MeterReadingFormData>({
     resolver: zodResolver(meterReadingSchema),
     defaultValues: {
       spaceId: '',
       utilityType: '',
-      period: '2025-12',
+      periodMonth: currentMonth,
+      periodYear: currentYearStr,
       indexOld: 0,
       indexNew: 0,
       constant: 1,
       pcs: undefined,
-      readingDate: new Date().toISOString().split('T')[0],
     },
   });
 
+  const watchedSpaceId = form.watch('spaceId');
   const watchedUtility = form.watch('utilityType');
+  const watchedMonth = form.watch('periodMonth');
+  const watchedYear = form.watch('periodYear');
   const watchedIndexOld = form.watch('indexOld');
   const watchedIndexNew = form.watch('indexNew');
   const watchedConstant = form.watch('constant');
   const watchedPcs = form.watch('pcs');
+
+  // Find the previous reading for auto-population
+  const previousReading = useMemo(() => {
+    if (!watchedSpaceId || !watchedUtility || !watchedMonth || !watchedYear) return null;
+    
+    const currentPeriod = `${watchedYear}-${watchedMonth}`;
+    
+    // Find all readings for this space and utility
+    const spaceUtilityReadings = allReadings.filter(
+      r => r.spaceId === watchedSpaceId && r.utilityType === watchedUtility && r.period < currentPeriod
+    );
+    
+    if (spaceUtilityReadings.length === 0) return null;
+    
+    // Sort by period descending and get the most recent one
+    spaceUtilityReadings.sort((a, b) => b.period.localeCompare(a.period));
+    return spaceUtilityReadings[0];
+  }, [watchedSpaceId, watchedUtility, watchedMonth, watchedYear, allReadings]);
+
+  // Auto-populate indexOld, constant, and pcs when space/utility/period changes
+  useEffect(() => {
+    if (isEditing) return; // Don't auto-populate when editing
+    
+    if (previousReading) {
+      form.setValue('indexOld', previousReading.indexNew);
+      form.setValue('constant', previousReading.constant);
+      if (previousReading.pcs) {
+        form.setValue('pcs', previousReading.pcs);
+      }
+    } else {
+      form.setValue('indexOld', 0);
+    }
+  }, [previousReading, isEditing, form]);
 
   const calculatedConsumption = (() => {
     const diff = (watchedIndexNew || 0) - (watchedIndexOld || 0);
@@ -91,31 +149,34 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
 
   useEffect(() => {
     if (editingReading) {
+      const [year, month] = editingReading.period.split('-');
       form.reset({
         spaceId: editingReading.spaceId,
         utilityType: editingReading.utilityType,
-        period: editingReading.period,
+        periodMonth: month,
+        periodYear: year,
         indexOld: editingReading.indexOld,
         indexNew: editingReading.indexNew,
         constant: editingReading.constant,
         pcs: editingReading.pcs,
-        readingDate: editingReading.readingDate,
       });
     } else {
       form.reset({
         spaceId: '',
         utilityType: '',
-        period: '2025-12',
+        periodMonth: currentMonth,
+        periodYear: currentYearStr,
         indexOld: 0,
         indexNew: 0,
         constant: 1,
         pcs: undefined,
-        readingDate: new Date().toISOString().split('T')[0],
       });
     }
-  }, [editingReading, form, open]);
+  }, [editingReading, form, open, currentMonth, currentYearStr]);
 
   const onSubmit = (data: MeterReadingFormData) => {
+    const period = `${data.periodYear}-${data.periodMonth}`;
+    
     const consumption = (() => {
       const diff = data.indexNew - data.indexOld;
       if (data.utilityType === 'GN' && data.pcs) {
@@ -128,13 +189,12 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
       id: editingReading?.id,
       spaceId: data.spaceId,
       utilityType: data.utilityType as UtilityType,
-      period: data.period,
+      period,
       indexOld: data.indexOld,
       indexNew: data.indexNew,
       constant: data.constant,
       pcs: data.pcs,
       consumption,
-      readingDate: data.readingDate,
     });
 
     onOpenChange(false);
@@ -215,24 +275,26 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
               />
             </div>
 
+            {/* Period Selection - Month and Year */}
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="period"
+                name="periodMonth"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Perioadă</FormLabel>
+                    <FormLabel>Luna</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selectați perioada" />
+                          <SelectValue placeholder="Selectați luna" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="2025-12">Decembrie 2025</SelectItem>
-                        <SelectItem value="2025-11">Noiembrie 2025</SelectItem>
-                        <SelectItem value="2025-10">Octombrie 2025</SelectItem>
-                        <SelectItem value="2025-09">Septembrie 2025</SelectItem>
+                        {MONTHS.map((month) => (
+                          <SelectItem key={month.value} value={month.value}>
+                            {month.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -242,18 +304,42 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
 
               <FormField
                 control={form.control}
-                name="readingDate"
+                name="periodYear"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Data Citirii</FormLabel>
-                    <FormControl>
-                      <Input type="date" {...field} />
-                    </FormControl>
+                    <FormLabel>Anul</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selectați anul" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {YEARS.map((year) => (
+                          <SelectItem key={year} value={String(year)}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+
+            {/* Previous reading info */}
+            {previousReading && !isEditing && (
+              <div className="flex items-start gap-2 p-3 bg-primary/5 rounded-lg border border-primary/20">
+                <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Index vechi preluat din perioada </span>
+                  <span className="font-medium">{MONTHS.find(m => m.value === previousReading.period.split('-')[1])?.label} {previousReading.period.split('-')[0]}</span>
+                  <span className="text-muted-foreground">: </span>
+                  <span className="font-semibold text-primary">{previousReading.indexNew.toLocaleString('ro-RO')}</span>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-3 gap-4">
               <FormField
@@ -263,7 +349,13 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave }: MeterR
                   <FormItem>
                     <FormLabel>Index Vechi</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.001" {...field} />
+                      <Input 
+                        type="number" 
+                        step="0.001" 
+                        {...field} 
+                        disabled={!!previousReading && !isEditing}
+                        className={previousReading && !isEditing ? 'bg-muted' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
