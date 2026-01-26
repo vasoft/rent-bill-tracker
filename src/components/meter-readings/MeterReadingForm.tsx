@@ -353,8 +353,6 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                         type="number" 
                         step="0.001" 
                         {...field} 
-                        disabled={!!previousReading && !isEditing}
-                        className={previousReading && !isEditing ? 'bg-muted' : ''}
                       />
                     </FormControl>
                     <FormMessage />
