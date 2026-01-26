@@ -36,21 +36,21 @@ export const suppliers: Supplier[] = [
 ];
 
 export const meterReadings: MeterReading[] = [
-  { id: 'MR1', spaceId: 'P1', utilityType: 'EE', period: '2025-12', indexNew: 74, indexOld: 56, constant: 20, consumption: 360, readingDate: '2025-12-31' },
-  { id: 'MR2', spaceId: 'P2', utilityType: 'EE', period: '2025-12', indexNew: 452, indexOld: 411, constant: 1, consumption: 41, readingDate: '2025-12-31' },
-  { id: 'MR3', spaceId: 'P3', utilityType: 'EE', period: '2025-12', indexNew: 389, indexOld: 287, constant: 1, consumption: 102, readingDate: '2025-12-31' },
-  { id: 'MR4', spaceId: 'P4', utilityType: 'EE', period: '2025-12', indexNew: 722, indexOld: 653, constant: 1, consumption: 69, readingDate: '2025-12-31' },
-  { id: 'MR5', spaceId: 'P5', utilityType: 'EE', period: '2025-12', indexNew: 711, indexOld: 699, constant: 20, consumption: 240, readingDate: '2025-12-31' },
-  { id: 'MR6', spaceId: 'P6', utilityType: 'EE', period: '2025-12', indexNew: 487, indexOld: 463, constant: 30, consumption: 720, readingDate: '2025-12-31' },
-  { id: 'MR7', spaceId: 'P7', utilityType: 'EE', period: '2025-12', indexNew: 597, indexOld: 582, constant: 30, consumption: 450, readingDate: '2025-12-31' },
-  { id: 'MR8', spaceId: 'P8', utilityType: 'EE', period: '2025-12', indexNew: 483, indexOld: 471, constant: 20, consumption: 240, readingDate: '2025-12-31' },
-  { id: 'MR9', spaceId: 'E1', utilityType: 'EE', period: '2025-12', indexNew: 357, indexOld: 345, constant: 20, consumption: 240, readingDate: '2025-12-31' },
-  { id: 'MR10', spaceId: 'E2', utilityType: 'EE', period: '2025-12', indexNew: 35, indexOld: 35, constant: 20, consumption: 0, readingDate: '2025-12-31' },
-  { id: 'MR11', spaceId: 'E3', utilityType: 'EE', period: '2025-12', indexNew: 321, indexOld: 288, constant: 20, consumption: 660, readingDate: '2025-12-31' },
+  { id: 'MR1', spaceId: 'P1', utilityType: 'EE', period: '2025-12', indexNew: 74, indexOld: 56, constant: 20, consumption: 360 },
+  { id: 'MR2', spaceId: 'P2', utilityType: 'EE', period: '2025-12', indexNew: 452, indexOld: 411, constant: 1, consumption: 41 },
+  { id: 'MR3', spaceId: 'P3', utilityType: 'EE', period: '2025-12', indexNew: 389, indexOld: 287, constant: 1, consumption: 102 },
+  { id: 'MR4', spaceId: 'P4', utilityType: 'EE', period: '2025-12', indexNew: 722, indexOld: 653, constant: 1, consumption: 69 },
+  { id: 'MR5', spaceId: 'P5', utilityType: 'EE', period: '2025-12', indexNew: 711, indexOld: 699, constant: 20, consumption: 240 },
+  { id: 'MR6', spaceId: 'P6', utilityType: 'EE', period: '2025-12', indexNew: 487, indexOld: 463, constant: 30, consumption: 720 },
+  { id: 'MR7', spaceId: 'P7', utilityType: 'EE', period: '2025-12', indexNew: 597, indexOld: 582, constant: 30, consumption: 450 },
+  { id: 'MR8', spaceId: 'P8', utilityType: 'EE', period: '2025-12', indexNew: 483, indexOld: 471, constant: 20, consumption: 240 },
+  { id: 'MR9', spaceId: 'E1', utilityType: 'EE', period: '2025-12', indexNew: 357, indexOld: 345, constant: 20, consumption: 240 },
+  { id: 'MR10', spaceId: 'E2', utilityType: 'EE', period: '2025-12', indexNew: 35, indexOld: 35, constant: 20, consumption: 0 },
+  { id: 'MR11', spaceId: 'E3', utilityType: 'EE', period: '2025-12', indexNew: 321, indexOld: 288, constant: 20, consumption: 660 },
   // GN readings
-  { id: 'MR12', spaceId: 'P1', utilityType: 'GN', period: '2025-12', indexNew: 37084, indexOld: 37070, constant: 1, pcs: 10.940, consumption: 153.16, readingDate: '2025-12-31' },
-  { id: 'MR13', spaceId: 'P5', utilityType: 'GN', period: '2025-12', indexNew: 16685, indexOld: 16635, constant: 1, pcs: 10.940, consumption: 547, readingDate: '2025-12-31' },
-  { id: 'MR14', spaceId: 'P8', utilityType: 'GN', period: '2025-12', indexNew: 14169, indexOld: 14165, constant: 1, pcs: 10.940, consumption: 43.76, readingDate: '2025-12-31' },
+  { id: 'MR12', spaceId: 'P1', utilityType: 'GN', period: '2025-12', indexNew: 37084, indexOld: 37070, constant: 1, pcs: 10.940, consumption: 153.16 },
+  { id: 'MR13', spaceId: 'P5', utilityType: 'GN', period: '2025-12', indexNew: 16685, indexOld: 16635, constant: 1, pcs: 10.940, consumption: 547 },
+  { id: 'MR14', spaceId: 'P8', utilityType: 'GN', period: '2025-12', indexNew: 14169, indexOld: 14165, constant: 1, pcs: 10.940, consumption: 43.76 },
 ];
 
 export const supplierInvoices: SupplierInvoice[] = [

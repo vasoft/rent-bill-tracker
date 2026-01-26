@@ -200,6 +200,7 @@ const MeterReadings = () => {
           onOpenChange={setFormOpen}
           editingReading={editingReading}
           onSave={handleSaveReading}
+          allReadings={readings}
         />
 
         {/* Table */}
@@ -214,7 +215,6 @@ const MeterReadings = () => {
                 <TableHead className="text-right">Index Nou</TableHead>
                 <TableHead className="text-right">Constantă</TableHead>
                 <TableHead className="text-right">Consum</TableHead>
-                <TableHead>Data Citirii</TableHead>
                 <TableHead className="w-[60px]">Acțiuni</TableHead>
               </TableRow>
             </TableHeader>
@@ -234,9 +234,6 @@ const MeterReadings = () => {
                   <TableCell className="text-right">{reading.constant}</TableCell>
                   <TableCell className="text-right font-semibold">
                     {reading.consumption.toLocaleString('ro-RO')} {reading.unit}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {new Date(reading.readingDate).toLocaleDateString('ro-RO')}
                   </TableCell>
                   <TableCell>
                     <Button 
