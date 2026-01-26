@@ -20,9 +20,8 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Plus, Search, Gauge, Calendar, Zap, Flame, Pencil, CalendarPlus } from 'lucide-react';
+import { Plus, Search, Gauge, Calendar, Zap, Flame, Pencil } from 'lucide-react';
 import MeterReadingForm from '@/components/meter-readings/MeterReadingForm';
-import NewPeriodInitializer from '@/components/meter-readings/NewPeriodInitializer';
 import { toast } from 'sonner';
 
 
@@ -32,7 +31,6 @@ const MeterReadings = () => {
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
   const [periodFilter, setPeriodFilter] = useState<string>('2025-12');
   const [formOpen, setFormOpen] = useState(false);
-  const [newPeriodOpen, setNewPeriodOpen] = useState(false);
   const [editingReading, setEditingReading] = useState<MeterReading | null>(null);
 
   const readingsWithDetails = readings.map(reading => {
@@ -107,14 +105,6 @@ const MeterReadings = () => {
       setReadings(prev => [...prev, newReading]);
       toast.success('Citirea a fost adăugată cu succes!');
     }
-  };
-
-  const handleSaveAllReadings = (newReadings: Array<Omit<MeterReading, 'id'>>) => {
-    const readingsWithIds = newReadings.map((reading, index) => ({
-      ...reading,
-      id: `MR${Date.now()}_${index}`,
-    }));
-    setReadings(prev => [...prev, ...readingsWithIds]);
   };
 
   const totalConsumption = filteredReadings.reduce((sum, r) => sum + r.consumption, 0);
@@ -198,16 +188,10 @@ const MeterReadings = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="gap-2" onClick={() => setNewPeriodOpen(true)}>
-              <CalendarPlus className="w-4 h-4" />
-              Perioadă Nouă
-            </Button>
-            <Button className="gap-2" onClick={handleAddReading}>
-              <Plus className="w-4 h-4" />
-              Adaugă Citire
-            </Button>
-          </div>
+          <Button className="gap-2" onClick={handleAddReading}>
+            <Plus className="w-4 h-4" />
+            Adaugă Citire
+          </Button>
         </div>
 
         {/* Form Modal */}
@@ -217,13 +201,6 @@ const MeterReadings = () => {
           editingReading={editingReading}
           onSave={handleSaveReading}
           allReadings={readings}
-        />
-
-        <NewPeriodInitializer
-          open={newPeriodOpen}
-          onOpenChange={setNewPeriodOpen}
-          allReadings={readings}
-          onSaveAll={handleSaveAllReadings}
         />
 
         {/* Table */}
