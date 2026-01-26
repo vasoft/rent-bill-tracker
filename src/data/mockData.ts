@@ -36,6 +36,23 @@ export const suppliers: Supplier[] = [
 ];
 
 export const meterReadings: MeterReading[] = [
+  // Citiri Noiembrie 2025 (pentru auto-populare în Decembrie)
+  { id: 'MR_N1', spaceId: 'P1', utilityType: 'EE', period: '2025-11', indexNew: 56, indexOld: 38, constant: 20, consumption: 360, readingDate: '2025-11-30' },
+  { id: 'MR_N2', spaceId: 'P2', utilityType: 'EE', period: '2025-11', indexNew: 411, indexOld: 372, constant: 1, consumption: 39, readingDate: '2025-11-30' },
+  { id: 'MR_N3', spaceId: 'P3', utilityType: 'EE', period: '2025-11', indexNew: 287, indexOld: 195, constant: 1, consumption: 92, readingDate: '2025-11-30' },
+  { id: 'MR_N4', spaceId: 'P4', utilityType: 'EE', period: '2025-11', indexNew: 653, indexOld: 590, constant: 1, consumption: 63, readingDate: '2025-11-30' },
+  { id: 'MR_N5', spaceId: 'P5', utilityType: 'EE', period: '2025-11', indexNew: 699, indexOld: 688, constant: 20, consumption: 220, readingDate: '2025-11-30' },
+  { id: 'MR_N6', spaceId: 'P6', utilityType: 'EE', period: '2025-11', indexNew: 463, indexOld: 441, constant: 30, consumption: 660, readingDate: '2025-11-30' },
+  { id: 'MR_N7', spaceId: 'P7', utilityType: 'EE', period: '2025-11', indexNew: 582, indexOld: 569, constant: 30, consumption: 390, readingDate: '2025-11-30' },
+  { id: 'MR_N8', spaceId: 'P8', utilityType: 'EE', period: '2025-11', indexNew: 471, indexOld: 460, constant: 20, consumption: 220, readingDate: '2025-11-30' },
+  { id: 'MR_N9', spaceId: 'E1', utilityType: 'EE', period: '2025-11', indexNew: 345, indexOld: 334, constant: 20, consumption: 220, readingDate: '2025-11-30' },
+  { id: 'MR_N10', spaceId: 'E2', utilityType: 'EE', period: '2025-11', indexNew: 35, indexOld: 35, constant: 20, consumption: 0, readingDate: '2025-11-30' },
+  { id: 'MR_N11', spaceId: 'E3', utilityType: 'EE', period: '2025-11', indexNew: 288, indexOld: 258, constant: 20, consumption: 600, readingDate: '2025-11-30' },
+  { id: 'MR_N12', spaceId: 'P1', utilityType: 'GN', period: '2025-11', indexNew: 37070, indexOld: 37058, constant: 1, pcs: 10.940, consumption: 131.28, readingDate: '2025-11-30' },
+  { id: 'MR_N13', spaceId: 'P5', utilityType: 'GN', period: '2025-11', indexNew: 16635, indexOld: 16590, constant: 1, pcs: 10.940, consumption: 492.30, readingDate: '2025-11-30' },
+  { id: 'MR_N14', spaceId: 'P8', utilityType: 'GN', period: '2025-11', indexNew: 14165, indexOld: 14161, constant: 1, pcs: 10.940, consumption: 43.76, readingDate: '2025-11-30' },
+  
+  // Citiri Decembrie 2025 (luna curentă)
   { id: 'MR1', spaceId: 'P1', utilityType: 'EE', period: '2025-12', indexNew: 74, indexOld: 56, constant: 20, consumption: 360, readingDate: '2025-12-31' },
   { id: 'MR2', spaceId: 'P2', utilityType: 'EE', period: '2025-12', indexNew: 452, indexOld: 411, constant: 1, consumption: 41, readingDate: '2025-12-31' },
   { id: 'MR3', spaceId: 'P3', utilityType: 'EE', period: '2025-12', indexNew: 389, indexOld: 287, constant: 1, consumption: 102, readingDate: '2025-12-31' },
@@ -47,7 +64,7 @@ export const meterReadings: MeterReading[] = [
   { id: 'MR9', spaceId: 'E1', utilityType: 'EE', period: '2025-12', indexNew: 357, indexOld: 345, constant: 20, consumption: 240, readingDate: '2025-12-31' },
   { id: 'MR10', spaceId: 'E2', utilityType: 'EE', period: '2025-12', indexNew: 35, indexOld: 35, constant: 20, consumption: 0, readingDate: '2025-12-31' },
   { id: 'MR11', spaceId: 'E3', utilityType: 'EE', period: '2025-12', indexNew: 321, indexOld: 288, constant: 20, consumption: 660, readingDate: '2025-12-31' },
-  // GN readings
+  // GN readings Dec
   { id: 'MR12', spaceId: 'P1', utilityType: 'GN', period: '2025-12', indexNew: 37084, indexOld: 37070, constant: 1, pcs: 10.940, consumption: 153.16, readingDate: '2025-12-31' },
   { id: 'MR13', spaceId: 'P5', utilityType: 'GN', period: '2025-12', indexNew: 16685, indexOld: 16635, constant: 1, pcs: 10.940, consumption: 547, readingDate: '2025-12-31' },
   { id: 'MR14', spaceId: 'P8', utilityType: 'GN', period: '2025-12', indexNew: 14169, indexOld: 14165, constant: 1, pcs: 10.940, consumption: 43.76, readingDate: '2025-12-31' },
