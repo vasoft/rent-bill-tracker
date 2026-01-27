@@ -48,6 +48,7 @@ const MONTHS = [
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
+const FUTURE_YEARS = Array.from({ length: 3 }, (_, i) => currentYear + i); // Current year + 2 future years
 
 const meterReadingSchema = z.object({
   spaceId: z.string().min(1, 'Selectați spațiul'),
@@ -116,6 +117,26 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
       months: MONTHS.filter(m => uniqueMonths.includes(m.value)),
     };
   }, [isEditing, allReadings]);
+
+  // Get available months for add mode (current and future only)
+  const availableAddPeriods = useMemo(() => {
+    const currentMonthNum = new Date().getMonth() + 1;
+    const selectedYear = parseInt(watchedYear) || currentYear;
+    
+    if (selectedYear > currentYear) {
+      // Future year - all months available
+      return { months: MONTHS, years: FUTURE_YEARS };
+    } else if (selectedYear === currentYear) {
+      // Current year - only current month and future months
+      return {
+        months: MONTHS.filter(m => parseInt(m.value) >= currentMonthNum),
+        years: FUTURE_YEARS,
+      };
+    } else {
+      // Past year - no months available (shouldn't happen with year filter)
+      return { months: [], years: FUTURE_YEARS };
+    }
+  }, [watchedYear]);
 
   // Find the previous reading for auto-population
   const previousReading = useMemo(() => {
@@ -315,7 +336,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {(isEditing ? availableHistoryPeriods.months : MONTHS).map((month) => (
+                        {(isEditing ? availableHistoryPeriods.months : availableAddPeriods.months).map((month) => (
                           <SelectItem key={month.value} value={month.value}>
                             {month.label}
                           </SelectItem>
@@ -340,7 +361,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {(isEditing ? availableHistoryPeriods.years : YEARS).map((year) => (
+                        {(isEditing ? availableHistoryPeriods.years : availableAddPeriods.years).map((year) => (
                           <SelectItem key={year} value={String(year)}>
                             {year}
                           </SelectItem>
