@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,8 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SupplierInvoice, Supplier, UTILITIES, UtilityType } from '@/types/utility';
+import { SupplierInvoice, Supplier, UTILITIES, UtilityType, UtilityInfo } from '@/types/utility';
 import { Badge } from '@/components/ui/badge';
+import { Plus } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 
 const invoiceSchema = z.object({
   invoiceNumber: z.string().min(1, 'Nr. factură este obligatoriu').max(50),
@@ -49,8 +51,11 @@ interface InvoiceFormProps {
   mode: 'add' | 'view';
   invoice?: SupplierInvoice | null;
   suppliers: Supplier[];
+  utilities: UtilityInfo[];
   existingPeriods: string[];
   onSubmit: (data: InvoiceValues) => void;
+  onAddSupplier: (supplier: Omit<Supplier, 'id'>) => Supplier;
+  onAddUtility: (utility: Omit<UtilityInfo, 'id'>) => UtilityInfo;
 }
 
 const InvoiceForm = ({
@@ -59,9 +64,21 @@ const InvoiceForm = ({
   mode,
   invoice,
   suppliers,
+  utilities,
   existingPeriods,
   onSubmit,
+  onAddSupplier,
+  onAddUtility,
 }: InvoiceFormProps) => {
+  // States for adding new supplier/utility
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [showAddUtility, setShowAddUtility] = useState(false);
+  const [newSupplierName, setNewSupplierName] = useState('');
+  const [newSupplierContract, setNewSupplierContract] = useState('');
+  const [newUtilityCode, setNewUtilityCode] = useState('');
+  const [newUtilityName, setNewUtilityName] = useState('');
+  const [newUtilityUnit, setNewUtilityUnit] = useState('');
+  const [newUtilityHasMeter, setNewUtilityHasMeter] = useState(false);
   const form = useForm<InvoiceValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
@@ -82,6 +99,16 @@ const InvoiceForm = ({
 
   useEffect(() => {
     if (open) {
+      // Reset add states
+      setShowAddSupplier(false);
+      setShowAddUtility(false);
+      setNewSupplierName('');
+      setNewSupplierContract('');
+      setNewUtilityCode('');
+      setNewUtilityName('');
+      setNewUtilityUnit('');
+      setNewUtilityHasMeter(false);
+
       if (mode === 'view' && invoice) {
         form.reset({
           invoiceNumber: invoice.invoiceNumber,
@@ -109,6 +136,39 @@ const InvoiceForm = ({
       }
     }
   }, [open, mode, invoice, form]);
+
+  const handleAddNewSupplier = () => {
+    if (newSupplierName.trim()) {
+      const selectedUtility = form.watch('utilityType') as UtilityType || 'EE';
+      const newSupplier = onAddSupplier({
+        name: newSupplierName.trim(),
+        utilityType: selectedUtility,
+        contractNumber: newSupplierContract.trim() || undefined,
+      });
+      form.setValue('supplierId', newSupplier.id);
+      setShowAddSupplier(false);
+      setNewSupplierName('');
+      setNewSupplierContract('');
+    }
+  };
+
+  const handleAddNewUtility = () => {
+    if (newUtilityCode.trim() && newUtilityName.trim()) {
+      const newUtility = onAddUtility({
+        name: newUtilityCode.trim().toUpperCase(),
+        fullName: newUtilityName.trim(),
+        unit: newUtilityUnit.trim() || 'unitate',
+        color: 'chart-sm',
+        hasMeter: newUtilityHasMeter,
+      });
+      form.setValue('utilityType', newUtility.id);
+      setShowAddUtility(false);
+      setNewUtilityCode('');
+      setNewUtilityName('');
+      setNewUtilityUnit('');
+      setNewUtilityHasMeter(false);
+    }
+  };
 
   const handleSubmit = (data: InvoiceValues) => {
     onSubmit(data);
@@ -151,7 +211,7 @@ const InvoiceForm = ({
   };
 
   const selectedSupplier = suppliers.find(s => s.id === form.watch('supplierId'));
-  const selectedUtility = UTILITIES.find(u => u.id === form.watch('utilityType'));
+  const selectedUtility = utilities.find(u => u.id === form.watch('utilityType'));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -177,24 +237,79 @@ const InvoiceForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Furnizor</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={mode === 'view'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selectează furnizor" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {suppliers.map((supplier) => (
-                        <SelectItem key={supplier.id} value={supplier.id}>
-                          {supplier.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {!showAddSupplier ? (
+                    <div className="space-y-2">
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={mode === 'view'}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selectează furnizor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {suppliers.map((supplier) => (
+                            <SelectItem key={supplier.id} value={supplier.id}>
+                              {supplier.name}
+                            </SelectItem>
+                          ))}
+                          {mode === 'add' && (
+                            <>
+                              <Separator className="my-1" />
+                              <div
+                                className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-primary font-medium"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setShowAddSupplier(true);
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Adaugă furnizor nou
+                              </div>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-3 border rounded-md bg-muted/30">
+                      <Input
+                        placeholder="Denumire furnizor"
+                        value={newSupplierName}
+                        onChange={(e) => setNewSupplierName(e.target.value)}
+                      />
+                      <Input
+                        placeholder="Nr. contract (opțional)"
+                        value={newSupplierContract}
+                        onChange={(e) => setNewSupplierContract(e.target.value)}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddNewSupplier}
+                          disabled={!newSupplierName.trim()}
+                        >
+                          Salvează
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setShowAddSupplier(false);
+                            setNewSupplierName('');
+                            setNewSupplierContract('');
+                          }}
+                        >
+                          Anulează
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}
@@ -207,29 +322,104 @@ const InvoiceForm = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Utilitate</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={mode === 'view'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selectează utilitate" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {UTILITIES.map((utility) => (
-                        <SelectItem key={utility.id} value={utility.id}>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className={getUtilityColor(utility.id)}>
-                              {utility.name}
-                            </Badge>
-                            {utility.fullName}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {!showAddUtility ? (
+                    <div className="space-y-2">
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={mode === 'view'}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selectează utilitate" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {utilities.map((utility) => (
+                            <SelectItem key={utility.id} value={utility.id}>
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className={getUtilityColor(utility.id as UtilityType)}>
+                                  {utility.name}
+                                </Badge>
+                                {utility.fullName}
+                              </div>
+                            </SelectItem>
+                          ))}
+                          {mode === 'add' && (
+                            <>
+                              <Separator className="my-1" />
+                              <div
+                                className="relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground text-primary font-medium"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setShowAddUtility(true);
+                                }}
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Adaugă utilitate nouă
+                              </div>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-3 border rounded-md bg-muted/30">
+                      <div className="grid grid-cols-2 gap-2">
+                        <Input
+                          placeholder="Cod (ex: EE)"
+                          value={newUtilityCode}
+                          onChange={(e) => setNewUtilityCode(e.target.value)}
+                          maxLength={5}
+                        />
+                        <Input
+                          placeholder="Unitate măsură"
+                          value={newUtilityUnit}
+                          onChange={(e) => setNewUtilityUnit(e.target.value)}
+                        />
+                      </div>
+                      <Input
+                        placeholder="Denumire completă"
+                        value={newUtilityName}
+                        onChange={(e) => setNewUtilityName(e.target.value)}
+                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="hasMeter"
+                          checked={newUtilityHasMeter}
+                          onChange={(e) => setNewUtilityHasMeter(e.target.checked)}
+                          className="rounded"
+                        />
+                        <label htmlFor="hasMeter" className="text-sm">Are contor</label>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleAddNewUtility}
+                          disabled={!newUtilityCode.trim() || !newUtilityName.trim()}
+                        >
+                          Salvează
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setShowAddUtility(false);
+                            setNewUtilityCode('');
+                            setNewUtilityName('');
+                            setNewUtilityUnit('');
+                            setNewUtilityHasMeter(false);
+                          }}
+                        >
+                          Anulează
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

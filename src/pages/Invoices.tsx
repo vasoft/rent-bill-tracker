@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { supplierInvoices, suppliers } from '@/data/mockData';
-import { UTILITIES, UtilityType, SupplierInvoice } from '@/types/utility';
+import { supplierInvoices, suppliers as initialSuppliers } from '@/data/mockData';
+import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo } from '@/types/utility';
 import { 
   Table, 
   TableBody, 
@@ -27,13 +27,15 @@ const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
   const [invoicesList, setInvoicesList] = useState<SupplierInvoice[]>(supplierInvoices);
+  const [suppliersList, setSuppliersList] = useState<Supplier[]>(initialSuppliers);
+  const [utilitiesList, setUtilitiesList] = useState<UtilityInfo[]>([...UTILITIES]);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'view'>('add');
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
 
   const invoicesWithDetails = invoicesList.map(invoice => {
-    const supplier = suppliers.find(s => s.id === invoice.supplierId);
-    const utility = UTILITIES.find(u => u.id === invoice.utilityType);
+    const supplier = suppliersList.find(s => s.id === invoice.supplierId);
+    const utility = utilitiesList.find(u => u.id === invoice.utilityType);
     
     return {
       ...invoice,
@@ -105,6 +107,24 @@ const Invoices = () => {
     setInvoicesList(prev => [...prev, newInvoice]);
   };
 
+  const handleAddSupplier = (supplierData: Omit<Supplier, 'id'>): Supplier => {
+    const newSupplier: Supplier = {
+      ...supplierData,
+      id: `FR${Date.now()}`,
+    };
+    setSuppliersList(prev => [...prev, newSupplier]);
+    return newSupplier;
+  };
+
+  const handleAddUtility = (utilityData: Omit<UtilityInfo, 'id'>): UtilityInfo => {
+    const newUtility: UtilityInfo = {
+      ...utilityData,
+      id: utilityData.name as UtilityType,
+    };
+    setUtilitiesList(prev => [...prev, newUtility]);
+    return newUtility;
+  };
+
   const existingPeriods = [...new Set(invoicesList.map(inv => inv.period))];
 
   return (
@@ -165,7 +185,7 @@ const Invoices = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toate Utilitățile</SelectItem>
-                {UTILITIES.map(u => (
+                {utilitiesList.map(u => (
                   <SelectItem key={u.id} value={u.id}>{u.fullName}</SelectItem>
                 ))}
               </SelectContent>
@@ -241,9 +261,12 @@ const Invoices = () => {
           onOpenChange={setFormOpen}
           mode={formMode}
           invoice={selectedInvoice}
-          suppliers={suppliers}
+          suppliers={suppliersList}
+          utilities={utilitiesList}
           existingPeriods={existingPeriods}
           onSubmit={handleFormSubmit}
+          onAddSupplier={handleAddSupplier}
+          onAddUtility={handleAddUtility}
         />
       </div>
     </MainLayout>
