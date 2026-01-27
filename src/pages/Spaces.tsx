@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { spaces, clients } from '@/data/mockData';
+import { spaces as initialSpaces, clients } from '@/data/mockData';
 import { 
   Table, 
   TableBody, 
@@ -12,12 +12,18 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Building2, Users, Square } from 'lucide-react';
+import { Plus, Search, Edit, Building2, Users, Square, Trash2 } from 'lucide-react';
+import { Space } from '@/types/utility';
+import { SpaceForm } from '@/components/spaces/SpaceForm';
 
 const Spaces = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [spacesList, setSpacesList] = useState<Space[]>(initialSpaces);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'add' | 'edit' | 'delete'>('add');
+  const [selectedSpace, setSelectedSpace] = useState<Space | null>(null);
 
-  const filteredSpaces = spaces.filter(space => 
+  const filteredSpaces = spacesList.filter(space => 
     space.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     space.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -28,9 +34,51 @@ const Spaces = () => {
     return client?.name || 'Necunoscut';
   };
 
-  const totalArea = spaces.reduce((sum, s) => sum + s.area, 0);
-  const occupiedArea = spaces.filter(s => s.clientId).reduce((sum, s) => sum + s.area, 0);
-  const totalPersons = spaces.reduce((sum, s) => sum + s.persons, 0);
+  const totalArea = spacesList.reduce((sum, s) => sum + s.area, 0);
+  const occupiedSpaces = spacesList.filter(s => s.clientId).length;
+  const totalPersons = spacesList.reduce((sum, s) => sum + s.persons, 0);
+
+  const handleOpenAdd = () => {
+    setSelectedSpace(null);
+    setFormMode('add');
+    setFormOpen(true);
+  };
+
+  const handleOpenEdit = (space: Space) => {
+    setSelectedSpace(space);
+    setFormMode('edit');
+    setFormOpen(true);
+  };
+
+  const handleOpenDelete = (space: Space) => {
+    setSelectedSpace(space);
+    setFormMode('delete');
+    setFormOpen(true);
+  };
+
+  const handleFormSubmit = (data: { id: string; name: string; area: number; persons: number }, mode: 'add' | 'edit' | 'delete') => {
+    if (mode === 'add') {
+      const newSpace: Space = {
+        id: data.id,
+        name: data.name,
+        area: data.area,
+        persons: data.persons,
+        clientId: null,
+      };
+      setSpacesList(prev => [...prev, newSpace]);
+    } else if (mode === 'edit') {
+      setSpacesList(prev => 
+        prev.map(s => s.id === selectedSpace?.id 
+          ? { ...s, name: data.name, area: data.area, persons: data.persons }
+          : s
+        )
+      );
+    } else if (mode === 'delete') {
+      setSpacesList(prev => prev.filter(s => s.id !== data.id));
+    }
+  };
+
+  const existingIds = spacesList.map(s => s.id);
 
   return (
     <MainLayout title="Spații" subtitle="Gestiunea spațiilor și imobilelor">
@@ -43,7 +91,7 @@ const Spaces = () => {
                 <Building2 className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{spaces.length}</p>
+                <p className="text-2xl font-bold">{spacesList.length}</p>
                 <p className="text-sm text-muted-foreground">Total Spații</p>
               </div>
             </div>
@@ -54,7 +102,7 @@ const Spaces = () => {
                 <Building2 className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{spaces.filter(s => s.clientId).length}</p>
+                <p className="text-2xl font-bold">{occupiedSpaces}</p>
                 <p className="text-sm text-muted-foreground">Spații Ocupate</p>
               </div>
             </div>
@@ -94,7 +142,7 @@ const Spaces = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleOpenAdd}>
             <Plus className="w-4 h-4" />
             Adaugă Spațiu
           </Button>
@@ -128,15 +176,41 @@ const Spaces = () => {
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleOpenEdit(space)}
+                        title="Modifică spațiu"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleOpenDelete(space)}
+                        title="Șterge spațiu"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
+
+        {/* Space Form Dialog */}
+        <SpaceForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          mode={formMode}
+          space={selectedSpace}
+          existingIds={existingIds}
+          onSubmit={handleFormSubmit}
+        />
       </div>
     </MainLayout>
   );
