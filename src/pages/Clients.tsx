@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { clients, spaces, getClientTotalByPeriod } from '@/data/mockData';
+import { clients as initialClients, spaces as initialSpaces, getClientTotalByPeriod } from '@/data/mockData';
+import { Client, Space } from '@/types/utility';
 import { 
   Table, 
   TableBody, 
@@ -12,13 +13,22 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Edit, Users, Building2, TrendingUp } from 'lucide-react';
+import { Plus, Search, Edit, Users, Building2, TrendingUp, Trash2 } from 'lucide-react';
+import ClientForm from '@/components/clients/ClientForm';
 
 const Clients = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [clientsList, setClientsList] = useState<Client[]>(initialClients);
+  const [spacesList, setSpacesList] = useState<Space[]>(initialSpaces);
+  
+  // Form state
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'add' | 'edit' | 'delete'>('add');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
-  const clientsWithDetails = clients.map(client => {
-    const clientSpaces = spaces.filter(s => s.clientId === client.id);
+  // Calculate client details with spaces info
+  const clientsWithDetails = clientsList.map(client => {
+    const clientSpaces = spacesList.filter(s => s.clientId === client.id);
     const totalArea = clientSpaces.reduce((sum, s) => sum + s.area, 0);
     const totalPersons = clientSpaces.reduce((sum, s) => sum + s.persons, 0);
     const currentTotal = getClientTotalByPeriod(client.id, '2025-12');
@@ -38,6 +48,102 @@ const Clients = () => {
     client.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const openAddForm = () => {
+    setSelectedClient(null);
+    setFormMode('add');
+    setFormOpen(true);
+  };
+
+  const openEditForm = (client: Client) => {
+    setSelectedClient(client);
+    setFormMode('edit');
+    setFormOpen(true);
+  };
+
+  const openDeleteForm = (client: Client) => {
+    setSelectedClient(client);
+    setFormMode('delete');
+    setFormOpen(true);
+  };
+
+  const getClientPersons = (clientId: string): number => {
+    return spacesList
+      .filter(s => s.clientId === clientId)
+      .reduce((sum, s) => sum + s.persons, 0);
+  };
+
+  const handleFormSubmit = (
+    data: { id: string; name: string; type: 'PJ' | 'PF'; spaces: string[]; persons: number }, 
+    mode: 'add' | 'edit' | 'delete'
+  ) => {
+    if (mode === 'add') {
+      // Add new client
+      const newClient: Client = {
+        id: data.id,
+        name: data.name,
+        type: data.type,
+        spaces: data.spaces,
+      };
+      setClientsList(prev => [...prev, newClient]);
+      
+      // Update spaces with clientId and distribute persons
+      const personsPerSpace = data.spaces.length > 0 
+        ? Math.floor(data.persons / data.spaces.length) 
+        : 0;
+      const remainder = data.spaces.length > 0 
+        ? data.persons % data.spaces.length 
+        : 0;
+      
+      setSpacesList(prev => 
+        prev.map((space, idx) => {
+          if (data.spaces.includes(space.id)) {
+            const spaceIndex = data.spaces.indexOf(space.id);
+            return {
+              ...space,
+              clientId: data.id,
+              persons: personsPerSpace + (spaceIndex < remainder ? 1 : 0),
+            };
+          }
+          return space;
+        })
+      );
+    } else if (mode === 'edit') {
+      // Only update persons (distributed across spaces)
+      const clientSpaces = spacesList.filter(s => s.clientId === selectedClient?.id);
+      const personsPerSpace = clientSpaces.length > 0 
+        ? Math.floor(data.persons / clientSpaces.length) 
+        : 0;
+      const remainder = clientSpaces.length > 0 
+        ? data.persons % clientSpaces.length 
+        : 0;
+      
+      setSpacesList(prev => 
+        prev.map((space) => {
+          if (space.clientId === selectedClient?.id) {
+            const spaceIndex = clientSpaces.findIndex(s => s.id === space.id);
+            return {
+              ...space,
+              persons: personsPerSpace + (spaceIndex < remainder ? 1 : 0),
+            };
+          }
+          return space;
+        })
+      );
+    } else if (mode === 'delete') {
+      // Remove client
+      setClientsList(prev => prev.filter(c => c.id !== data.id));
+      
+      // Clear clientId and persons from spaces
+      setSpacesList(prev => 
+        prev.map(space => 
+          space.clientId === data.id 
+            ? { ...space, clientId: null, persons: 0 } 
+            : space
+        )
+      );
+    }
+  };
+
   return (
     <MainLayout title="Clienți" subtitle="Gestiunea clienților și chiriașilor">
       <div className="space-y-6 animate-slide-up">
@@ -49,7 +155,7 @@ const Clients = () => {
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{clients.length}</p>
+                <p className="text-2xl font-bold">{clientsList.length}</p>
                 <p className="text-sm text-muted-foreground">Total Clienți</p>
               </div>
             </div>
@@ -60,7 +166,7 @@ const Clients = () => {
                 <Building2 className="w-5 h-5 text-success" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{clients.filter(c => c.type === 'PJ').length}</p>
+                <p className="text-2xl font-bold">{clientsList.filter(c => c.type === 'PJ').length}</p>
                 <p className="text-sm text-muted-foreground">Persoane Juridice</p>
               </div>
             </div>
@@ -91,7 +197,7 @@ const Clients = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={openAddForm}>
             <Plus className="w-4 h-4" />
             Adaugă Client
           </Button>
@@ -138,15 +244,39 @@ const Clients = () => {
                     {client.currentTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
-                      <Edit className="w-4 h-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEditForm(client)}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => openDeleteForm(client)}>
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredClients.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    Nu au fost găsiți clienți
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </div>
+
+        {/* Client Form Dialog */}
+        <ClientForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          mode={formMode}
+          client={selectedClient}
+          existingIds={clientsList.map(c => c.id)}
+          availableSpaces={spacesList}
+          clientSpacesPersons={selectedClient ? getClientPersons(selectedClient.id) : 0}
+          onSubmit={handleFormSubmit}
+        />
       </div>
     </MainLayout>
   );
