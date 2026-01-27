@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { supplierInvoices, suppliers } from '@/data/mockData';
-import { UTILITIES, UtilityType } from '@/types/utility';
+import { UTILITIES, UtilityType, SupplierInvoice } from '@/types/utility';
 import { 
   Table, 
   TableBody, 
@@ -20,14 +20,18 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Plus, Search, FileText, Calendar, Eye } from 'lucide-react';
-
+import { Plus, Search, FileText, Eye } from 'lucide-react';
+import InvoiceForm from '@/components/invoices/InvoiceForm';
 
 const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
+  const [invoicesList, setInvoicesList] = useState<SupplierInvoice[]>(supplierInvoices);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'add' | 'view'>('add');
+  const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
 
-  const invoicesWithDetails = supplierInvoices.map(invoice => {
+  const invoicesWithDetails = invoicesList.map(invoice => {
     const supplier = suppliers.find(s => s.id === invoice.supplierId);
     const utility = UTILITIES.find(u => u.id === invoice.utilityType);
     
@@ -62,6 +66,46 @@ const Invoices = () => {
     };
     return colors[type] || 'bg-muted text-muted-foreground';
   };
+
+  const handleAddClick = () => {
+    setSelectedInvoice(null);
+    setFormMode('add');
+    setFormOpen(true);
+  };
+
+  const handleViewClick = (invoice: SupplierInvoice) => {
+    setSelectedInvoice(invoice);
+    setFormMode('view');
+    setFormOpen(true);
+  };
+
+  const handleFormSubmit = (data: {
+    invoiceNumber: string;
+    supplierId: string;
+    utilityType: string;
+    period: string;
+    totalConsumption: number;
+    netValue: number;
+    vatRate: number;
+    vatValue: number;
+  }) => {
+    const newInvoice: SupplierInvoice = {
+      id: `INV${Date.now()}`,
+      supplierId: data.supplierId,
+      utilityType: data.utilityType as UtilityType,
+      period: data.period,
+      invoiceNumber: data.invoiceNumber,
+      issueDate: new Date().toISOString().split('T')[0],
+      totalConsumption: data.totalConsumption,
+      netValue: data.netValue,
+      vatRate: data.vatRate,
+      vatValue: data.vatValue,
+      totalValue: data.netValue + data.vatValue,
+    };
+    setInvoicesList(prev => [...prev, newInvoice]);
+  };
+
+  const existingPeriods = [...new Set(invoicesList.map(inv => inv.period))];
 
   return (
     <MainLayout title="Facturi Furnizori" subtitle="Gestionarea facturilor de la furnizori">
@@ -127,7 +171,7 @@ const Invoices = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleAddClick}>
             <Plus className="w-4 h-4" />
             Adaugă Factură
           </Button>
@@ -176,7 +220,12 @@ const Invoices = () => {
                     {invoice.totalValue.toLocaleString('ro-RO')} lei
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="icon">
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={() => handleViewClick(invoice)}
+                      title="Vizualizează factura"
+                    >
                       <Eye className="w-4 h-4" />
                     </Button>
                   </TableCell>
@@ -185,6 +234,17 @@ const Invoices = () => {
             </TableBody>
           </Table>
         </div>
+
+        {/* Invoice Form Modal */}
+        <InvoiceForm
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          mode={formMode}
+          invoice={selectedInvoice}
+          suppliers={suppliers}
+          existingPeriods={existingPeriods}
+          onSubmit={handleFormSubmit}
+        />
       </div>
     </MainLayout>
   );
