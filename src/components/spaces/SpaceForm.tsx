@@ -28,7 +28,6 @@ const spaceSchema = z.object({
   id: z.string().min(1, 'ID-ul este obligatoriu').max(10, 'ID-ul trebuie să aibă maxim 10 caractere'),
   name: z.string().min(1, 'Denumirea este obligatorie').max(50, 'Denumirea trebuie să aibă maxim 50 caractere'),
   area: z.coerce.number().min(0.01, 'Suprafața trebuie să fie mai mare de 0'),
-  persons: z.coerce.number().min(0, 'Numărul de persoane nu poate fi negativ').int('Numărul de persoane trebuie să fie întreg'),
 });
 
 type SpaceFormValues = z.infer<typeof spaceSchema>;
@@ -56,7 +55,6 @@ export const SpaceForm = ({
       id: '',
       name: '',
       area: 0,
-      persons: 0,
     },
   });
 
@@ -67,14 +65,12 @@ export const SpaceForm = ({
           id: '',
           name: '',
           area: 0,
-          persons: 0,
         });
       } else if (space) {
         form.reset({
           id: space.id,
           name: space.name,
           area: space.area,
-          persons: space.persons,
         });
       }
     }
@@ -110,7 +106,7 @@ export const SpaceForm = ({
 
   const handleDelete = () => {
     if (space) {
-      onSubmit({ id: space.id, name: space.name, area: space.area, persons: space.persons }, 'delete');
+      onSubmit({ id: space.id, name: space.name, area: space.area }, 'delete');
       onOpenChange(false);
       toast({
         title: 'Succes',
@@ -222,47 +218,25 @@ export const SpaceForm = ({
               )}
             />
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="area"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Suprafață (mp)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        step="0.01"
-                        min="0"
-                        placeholder="0" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="persons"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Persoane</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0"
-                        step="1"
-                        placeholder="0" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="area"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Suprafață (mp)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.01"
+                      min="0"
+                      placeholder="0" 
+                      {...field} 
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter className="gap-2 sm:gap-0 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

@@ -56,20 +56,20 @@ const Spaces = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = (data: { id: string; name: string; area: number; persons: number }, mode: 'add' | 'edit' | 'delete') => {
+  const handleFormSubmit = (data: { id: string; name: string; area: number }, mode: 'add' | 'edit' | 'delete') => {
     if (mode === 'add') {
       const newSpace: Space = {
         id: data.id,
         name: data.name,
         area: data.area,
-        persons: data.persons,
+        persons: 0, // Persoanele sunt gestionate prin Clienți
         clientId: null,
       };
       setSpacesList(prev => [...prev, newSpace]);
     } else if (mode === 'edit') {
       setSpacesList(prev => 
         prev.map(s => s.id === selectedSpace?.id 
-          ? { ...s, name: data.name, area: data.area, persons: data.persons }
+          ? { ...s, name: data.name, area: data.area }
           : s
         )
       );
