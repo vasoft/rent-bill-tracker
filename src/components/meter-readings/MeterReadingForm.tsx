@@ -102,6 +102,21 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
   const watchedConstant = form.watch('constant');
   const watchedPcs = form.watch('pcs');
 
+  // Get available periods from history for editing mode
+  const availableHistoryPeriods = useMemo(() => {
+    if (!isEditing) return { months: MONTHS, years: YEARS };
+    
+    // Get all unique periods from readings
+    const periods = [...new Set(allReadings.map(r => r.period))];
+    const uniqueYears = [...new Set(periods.map(p => p.split('-')[0]))].sort();
+    const uniqueMonths = [...new Set(periods.map(p => p.split('-')[1]))].sort();
+    
+    return {
+      years: uniqueYears.map(y => parseInt(y)),
+      months: MONTHS.filter(m => uniqueMonths.includes(m.value)),
+    };
+  }, [isEditing, allReadings]);
+
   // Find the previous reading for auto-population
   const previousReading = useMemo(() => {
     if (!watchedSpaceId || !watchedUtility || !watchedMonth || !watchedYear) return null;
@@ -119,6 +134,16 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
     spaceUtilityReadings.sort((a, b) => b.period.localeCompare(a.period));
     return spaceUtilityReadings[0];
   }, [watchedSpaceId, watchedUtility, watchedMonth, watchedYear, allReadings]);
+
+  // Find the reading for the selected period in view mode
+  const viewedReading = useMemo(() => {
+    if (!isEditing || !watchedSpaceId || !watchedUtility || !watchedMonth || !watchedYear) return null;
+    
+    const period = `${watchedYear}-${watchedMonth}`;
+    return allReadings.find(
+      r => r.spaceId === watchedSpaceId && r.utilityType === watchedUtility && r.period === period
+    ) || null;
+  }, [isEditing, watchedSpaceId, watchedUtility, watchedMonth, watchedYear, allReadings]);
 
   // Auto-populate indexOld, constant, and pcs when space/utility/period changes
   useEffect(() => {
@@ -214,10 +239,10 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Gauge className="w-5 h-5 text-primary" />
-            {isEditing ? 'Editare Citire Contor' : 'Adăugare Citire Contor'}
+            {isEditing ? 'Vizualizare Istoric Consum' : 'Adăugare Citire Contor'}
           </DialogTitle>
           <DialogDescription>
-            {isEditing ? 'Modificați datele citirii de contor.' : 'Completați formularul pentru a înregistra o nouă citire de contor.'}
+            {isEditing ? 'Vizualizați istoricul de consum selectând spațiul, utilitatea și perioada dorită.' : 'Completați formularul pentru a înregistra o nouă citire de contor.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -290,7 +315,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {MONTHS.map((month) => (
+                        {(isEditing ? availableHistoryPeriods.months : MONTHS).map((month) => (
                           <SelectItem key={month.value} value={month.value}>
                             {month.label}
                           </SelectItem>
@@ -315,7 +340,7 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {YEARS.map((year) => (
+                        {(isEditing ? availableHistoryPeriods.years : YEARS).map((year) => (
                           <SelectItem key={year} value={String(year)}>
                             {year}
                           </SelectItem>
@@ -352,7 +377,10 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                       <Input 
                         type="number" 
                         step="0.001" 
-                        {...field} 
+                        {...field}
+                        value={isEditing && viewedReading ? viewedReading.indexOld : field.value}
+                        disabled={isEditing}
+                        className={isEditing ? 'bg-muted' : ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -367,7 +395,14 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                   <FormItem>
                     <FormLabel>Index Nou</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.001" {...field} />
+                      <Input 
+                        type="number" 
+                        step="0.001" 
+                        {...field}
+                        value={isEditing && viewedReading ? viewedReading.indexNew : field.value}
+                        disabled={isEditing}
+                        className={isEditing ? 'bg-muted' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -381,7 +416,14 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                   <FormItem>
                     <FormLabel>Constantă</FormLabel>
                     <FormControl>
-                      <Input type="number" step="0.001" {...field} />
+                      <Input 
+                        type="number" 
+                        step="0.001" 
+                        {...field}
+                        value={isEditing && viewedReading ? viewedReading.constant : field.value}
+                        disabled={isEditing}
+                        className={isEditing ? 'bg-muted' : ''}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -402,7 +444,9 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
                         step="0.001" 
                         placeholder="ex: 10.940"
                         {...field}
-                        value={field.value || ''}
+                        value={isEditing && viewedReading ? (viewedReading.pcs || '') : (field.value || '')}
+                        disabled={isEditing}
+                        className={isEditing ? 'bg-muted' : ''}
                       />
                     </FormControl>
                     <FormMessage />
@@ -415,31 +459,46 @@ const MeterReadingForm = ({ open, onOpenChange, editingReading, onSave, allReadi
             <div className="bg-muted/50 rounded-lg p-4 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <Calculator className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium">Consum Calculat</span>
+                <span className="text-sm font-medium">{isEditing ? 'Consum Înregistrat' : 'Consum Calculat'}</span>
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold text-primary">
-                  {Math.max(0, calculatedConsumption).toLocaleString('ro-RO', { 
-                    minimumFractionDigits: 2, 
-                    maximumFractionDigits: 2 
-                  })}
+                  {isEditing && viewedReading 
+                    ? Math.max(0, viewedReading.consumption).toLocaleString('ro-RO', { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                      })
+                    : Math.max(0, calculatedConsumption).toLocaleString('ro-RO', { 
+                        minimumFractionDigits: 2, 
+                        maximumFractionDigits: 2 
+                      })
+                  }
                 </span>
                 <span className="text-muted-foreground">
                   {utilityInfo?.unit || 'unități'}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Formula: (Index Nou - Index Vechi) × Constantă{showPcs ? ' × PCS' : ''}
-              </p>
+              {!isEditing && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Formula: (Index Nou - Index Vechi) × Constantă{showPcs ? ' × PCS' : ''}
+                </p>
+              )}
+              {isEditing && !viewedReading && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Nu există înregistrare pentru selecția curentă.
+                </p>
+              )}
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Anulare
+                {isEditing ? 'Închide' : 'Anulare'}
               </Button>
-              <Button type="submit">
-                {isEditing ? 'Salvează Modificările' : 'Adaugă Citirea'}
-              </Button>
+              {!isEditing && (
+                <Button type="submit">
+                  Adaugă Citirea
+                </Button>
+              )}
             </DialogFooter>
           </form>
         </Form>
