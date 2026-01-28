@@ -4,8 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-import Spaces from "./pages/Spaces";
-import Clients from "./pages/Clients";
+import SpacesClients from "./pages/SpacesClients";
 import MeterReadings from "./pages/MeterReadings";
 import Invoices from "./pages/Invoices";
 import Distribution from "./pages/Distribution";
@@ -24,8 +23,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/spaces" element={<Spaces />} />
-          <Route path="/clients" element={<Clients />} />
+          <Route path="/spaces-clients" element={<SpacesClients />} />
           <Route path="/meter-readings" element={<MeterReadings />} />
           <Route path="/invoices" element={<Invoices />} />
           <Route path="/distribution" element={<Distribution />} />
