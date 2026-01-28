@@ -3,10 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Building2, 
-  Users, 
   Gauge, 
   FileText, 
-  Calculator, 
   ClipboardList,
   History,
   Settings,
@@ -25,9 +23,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: Building2, label: 'Spații & Clienți', path: '/spaces-clients' },
-  { icon: Gauge, label: 'Indexe Contori', path: '/meter-readings' },
+  { icon: Gauge, label: 'Utilități/Servicii', path: '/utilities-services' },
   { icon: FileText, label: 'Facturi Furnizori', path: '/invoices' },
-  { icon: Calculator, label: 'Repartizare', path: '/distribution' },
   { icon: ClipboardList, label: 'Note de Consum', path: '/consumption-notes' },
   { icon: History, label: 'Istoric', path: '/history' },
 ];

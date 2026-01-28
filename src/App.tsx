@@ -5,9 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import SpacesClients from "./pages/SpacesClients";
-import MeterReadings from "./pages/MeterReadings";
+import UtilitiesServices from "./pages/UtilitiesServices";
 import Invoices from "./pages/Invoices";
-import Distribution from "./pages/Distribution";
 import ConsumptionNotes from "./pages/ConsumptionNotes";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
@@ -24,9 +23,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/spaces-clients" element={<SpacesClients />} />
-          <Route path="/meter-readings" element={<MeterReadings />} />
+          <Route path="/utilities-services" element={<UtilitiesServices />} />
           <Route path="/invoices" element={<Invoices />} />
-          <Route path="/distribution" element={<Distribution />} />
           <Route path="/consumption-notes" element={<ConsumptionNotes />} />
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
