@@ -24,8 +24,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { icon: Building2, label: 'Spații', path: '/spaces' },
-  { icon: Users, label: 'Clienți', path: '/clients' },
+  { icon: Building2, label: 'Spații & Clienți', path: '/spaces-clients' },
   { icon: Gauge, label: 'Indexe Contori', path: '/meter-readings' },
   { icon: FileText, label: 'Facturi Furnizori', path: '/invoices' },
   { icon: Calculator, label: 'Repartizare', path: '/distribution' },
