@@ -48,6 +48,11 @@ const UtilitiesServices = () => {
   // Close period confirmation dialog
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
 
+  // Per-utility closing workflow
+  const [closedUtilities, setClosedUtilities] = useState<Set<string>>(new Set());
+  const [utilityCloseDialogOpen, setUtilityCloseDialogOpen] = useState(false);
+  const [closingUtilityType, setClosingUtilityType] = useState<string | null>(null);
+
   // Helper to compute summary stats from any row array
   const computeStats = (rows: { spaceId: string; clientId: string; consumption: number; unit: string; netValue: number; vatValue: number; totalValue: number }[]): SummaryStatsData => {
     const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
@@ -114,6 +119,46 @@ const UtilitiesServices = () => {
     return computeStats(recordedRows);
   }, [liveCurrentMonthData]);
 
+  // All distinct utility types present in current month data
+  const activeUtilityTypes = useMemo(() => {
+    return [...new Set(currentMonthData.map(r => r.utilityType))];
+  }, [currentMonthData]);
+
+  // Check if all active utilities have been confirmed closed
+  const allUtilitiesClosed = useMemo(() => {
+    return activeUtilityTypes.length > 0 && activeUtilityTypes.every(ut => closedUtilities.has(ut));
+  }, [activeUtilityTypes, closedUtilities]);
+
+  // Stats for a specific utility type (for per-utility close dialog)
+  const getUtilityStats = useCallback((utilityType: string) => {
+    const rows = currentMonthData.filter(r => r.utilityType === utilityType);
+    const withValues = recalculateValues(rows, currentPeriod);
+    return computeStats(withValues);
+  }, [currentMonthData, recalculateValues, currentPeriod]);
+
+  const handleConfirmUtility = (utilityType: string) => {
+    setClosingUtilityType(utilityType);
+    setUtilityCloseDialogOpen(true);
+  };
+
+  const handleUtilityCloseConfirmed = () => {
+    if (closingUtilityType) {
+      setClosedUtilities(prev => new Set(prev).add(closingUtilityType));
+      toast.success(`Utilitatea ${closingUtilityType} a fost confirmată pentru închidere.`);
+    }
+    setUtilityCloseDialogOpen(false);
+    setClosingUtilityType(null);
+  };
+
+  const handleReopenUtility = (utilityType: string) => {
+    setClosedUtilities(prev => {
+      const next = new Set(prev);
+      next.delete(utilityType);
+      return next;
+    });
+    toast.info(`Utilitatea ${utilityType} a fost redeschisă.`);
+  };
+
   const handleEditIndex = useCallback(async (row: CurrentMonthRow) => {
     let indexOld = row.indexOld;
     // If indexOld is 0, try to fetch from historical readings
@@ -149,6 +194,7 @@ const UtilitiesServices = () => {
 
   const handleClosePeriod = async () => {
     await closePeriod(currentPeriod);
+    setClosedUtilities(new Set());
     setCloseConfirmOpen(false);
   };
 
@@ -338,18 +384,58 @@ const UtilitiesServices = () => {
                     Inițializare Consum
                   </Button>
                 )}
+                {isInitialized && currentUtilityFilter !== 'all' && !closedUtilities.has(currentUtilityFilter) && (
+                  <Button
+                    variant="secondary"
+                    className="gap-2"
+                    onClick={() => handleConfirmUtility(currentUtilityFilter)}
+                  >
+                    <Lock className="w-4 h-4" />
+                    Confirmare {currentUtilityFilter}
+                  </Button>
+                )}
+                {isInitialized && currentUtilityFilter !== 'all' && closedUtilities.has(currentUtilityFilter) && (
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => handleReopenUtility(currentUtilityFilter)}
+                  >
+                    Redeschide {currentUtilityFilter}
+                  </Button>
+                )}
                 {isInitialized && (
                   <Button
                     variant="destructive"
                     className="gap-2"
+                    disabled={!allUtilitiesClosed}
                     onClick={() => setCloseConfirmOpen(true)}
+                    title={!allUtilitiesClosed ? `Confirmați mai întâi toate utilitățile: ${activeUtilityTypes.filter(ut => !closedUtilities.has(ut)).join(', ')}` : ''}
                   >
                     <Lock className="w-4 h-4" />
-                    Închidere Perioadă
+                    Închidere Perioadă ({closedUtilities.size}/{activeUtilityTypes.length})
                   </Button>
                 )}
               </div>
             </div>
+
+            {/* Utility confirmation status badges */}
+            {isInitialized && activeUtilityTypes.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {activeUtilityTypes.map(ut => (
+                  <Badge
+                    key={ut}
+                    variant={closedUtilities.has(ut) ? 'default' : 'outline'}
+                    className={`gap-1.5 cursor-pointer ${closedUtilities.has(ut) ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                    onClick={() => {
+                      setCurrentUtilityFilter(ut);
+                      if (!closedUtilities.has(ut)) handleConfirmUtility(ut);
+                    }}
+                  >
+                    {closedUtilities.has(ut) ? '✓' : '○'} {ut}
+                  </Badge>
+                ))}
+              </div>
+            )}
 
             {isInitialized && filteredCurrentMonthData.length > 0 && <SummaryStats data={currentStats} />}
 
@@ -547,6 +633,32 @@ const UtilitiesServices = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Anulează</Button>
               <Button onClick={handleSaveIndex}>Salvează</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Per-Utility Close Confirmation Dialog */}
+        <Dialog open={utilityCloseDialogOpen} onOpenChange={setUtilityCloseDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>
+                Confirmare Închidere {closingUtilityType && UTILITIES.find(u => u.id === closingUtilityType)?.fullName}
+              </DialogTitle>
+              <DialogDescription>
+                Confirmați că consumul și valorile repartizate pentru {closingUtilityType} în perioada {formatPeriod(currentPeriod)} sunt corecte?
+              </DialogDescription>
+            </DialogHeader>
+            {closingUtilityType && (
+              <div className="py-4">
+                <SummaryStats data={getUtilityStats(closingUtilityType)} compact />
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUtilityCloseDialogOpen(false)}>Anulează</Button>
+              <Button onClick={handleUtilityCloseConfirmed}>
+                <Lock className="w-4 h-4 mr-2" />
+                Confirmă {closingUtilityType}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
