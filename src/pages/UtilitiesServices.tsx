@@ -108,7 +108,11 @@ const UtilitiesServices = () => {
     );
   }, [filteredCurrentMonthData, editDialogOpen, editingRow, editIndexNew]);
 
-  const currentStats = useMemo(() => computeStats(liveCurrentMonthData), [liveCurrentMonthData]);
+  const currentStats = useMemo(() => {
+    // Only count rows where indexNew has been recorded (> 0)
+    const recordedRows = liveCurrentMonthData.filter(r => r.indexNew > 0);
+    return computeStats(recordedRows);
+  }, [liveCurrentMonthData]);
 
   const handleEditIndex = useCallback(async (row: CurrentMonthRow) => {
     let indexOld = row.indexOld;
