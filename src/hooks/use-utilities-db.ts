@@ -161,7 +161,7 @@ export function useUtilitiesDb() {
           clientId: space.clientId!,
           utilityType: utility.id,
           period,
-          indexOld: 0,
+          indexOld: lastReading?.indexNew || 0,
           indexNew: 0,
           constant: lastReading?.constant || (utility.id === 'GN' ? lastReading?.pcs || 10.94 : 1),
           consumption: 0,
