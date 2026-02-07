@@ -338,23 +338,16 @@ const UtilitiesServices = () => {
                     Inițializare Consum
                   </Button>
                 )}
-                {isInitialized && (() => {
-                  const allRecorded = liveCurrentMonthData.length > 0 && liveCurrentMonthData.every(r => r.indexNew > 0);
-                  const allDistributed = liveCurrentMonthData.length > 0 && liveCurrentMonthData.every(r => r.totalValue > 0);
-                  const canClose = allRecorded && allDistributed;
-                  return (
-                    <Button
-                      variant="destructive"
-                      className="gap-2"
-                      disabled={!canClose}
-                      onClick={() => setCloseConfirmOpen(true)}
-                      title={!allRecorded ? 'Toate indexele noi trebuie înregistrate' : !allDistributed ? 'Valorile facturilor trebuie repartizate' : ''}
-                    >
-                      <Lock className="w-4 h-4" />
-                      Închidere Perioadă
-                    </Button>
-                  );
-                })()}
+                {isInitialized && (
+                  <Button
+                    variant="destructive"
+                    className="gap-2"
+                    onClick={() => setCloseConfirmOpen(true)}
+                  >
+                    <Lock className="w-4 h-4" />
+                    Închidere Perioadă
+                  </Button>
+                )}
               </div>
             </div>
 
