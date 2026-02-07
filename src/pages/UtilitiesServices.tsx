@@ -198,6 +198,11 @@ const UtilitiesServices = () => {
     setCloseConfirmOpen(false);
   };
 
+  const getUtilityDisplayName = (type: UtilityType): string => {
+    if (type === 'AC') return 'A&C';
+    return type;
+  };
+
   const getUtilityColor = (type: UtilityType) => {
     const colors: Record<UtilityType, string> = {
       EE: 'bg-chart-ee/10 text-chart-ee border-chart-ee/30',
@@ -319,7 +324,7 @@ const UtilitiesServices = () => {
                         <TableCell>
                           <Badge variant="outline" className={`gap-1.5 ${getUtilityColor(item.utilityType)}`}>
                             {getUtilityIcon(item.utilityType)}
-                            {item.utilityType}
+                            {getUtilityDisplayName(item.utilityType)}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-mono">
@@ -419,21 +424,25 @@ const UtilitiesServices = () => {
             </div>
 
             {/* Utility confirmation status badges */}
-            {isInitialized && activeUtilityTypes.length > 0 && (
+            {isInitialized && (
               <div className="flex flex-wrap gap-2">
-                {activeUtilityTypes.map(ut => (
-                  <Badge
-                    key={ut}
-                    variant={closedUtilities.has(ut) ? 'default' : 'outline'}
-                    className={`gap-1.5 cursor-pointer ${closedUtilities.has(ut) ? 'bg-green-600 hover:bg-green-700' : ''}`}
-                    onClick={() => {
-                      setCurrentUtilityFilter(ut);
-                      if (!closedUtilities.has(ut)) handleConfirmUtility(ut);
-                    }}
-                  >
-                    {closedUtilities.has(ut) ? '✓' : '○'} {ut}
-                  </Badge>
-                ))}
+                {UTILITIES.map(u => {
+                  const isActive = activeUtilityTypes.includes(u.id);
+                  const isClosed = closedUtilities.has(u.id);
+                  return (
+                    <Badge
+                      key={u.id}
+                      variant={isClosed ? 'default' : 'outline'}
+                      className={`gap-1.5 cursor-pointer ${isClosed ? 'bg-green-600 hover:bg-green-700' : ''} ${!isActive ? 'opacity-40' : ''}`}
+                      onClick={() => {
+                        setCurrentUtilityFilter(u.id);
+                        if (isActive && !isClosed) handleConfirmUtility(u.id);
+                      }}
+                    >
+                      {isClosed ? '✓' : '○'} {getUtilityDisplayName(u.id)}
+                    </Badge>
+                  );
+                })}
               </div>
             )}
 
@@ -475,7 +484,7 @@ const UtilitiesServices = () => {
                           <TableCell>
                             <Badge variant="outline" className={`gap-1.5 ${getUtilityColor(item.utilityType)}`}>
                               {getUtilityIcon(item.utilityType)}
-                              {item.utilityType}
+                              {getUtilityDisplayName(item.utilityType)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono">
@@ -535,7 +544,7 @@ const UtilitiesServices = () => {
                           <TableCell>
                             <Badge variant="outline" className={`gap-1.5 ${getUtilityColor(item.utilityType)}`}>
                               {getUtilityIcon(item.utilityType)}
-                              {item.utilityType}
+                              {getUtilityDisplayName(item.utilityType)}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono">
