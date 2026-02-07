@@ -1,4 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import Dexie from 'dexie';
+import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
 import { useUtilitiesDb, type CurrentMonthRow, type HistoryRow } from '@/hooks/use-utilities-db';
@@ -108,11 +110,23 @@ const UtilitiesServices = () => {
 
   const currentStats = useMemo(() => computeStats(liveCurrentMonthData), [liveCurrentMonthData]);
 
-  const handleEditIndex = (row: CurrentMonthRow) => {
-    setEditingRow({ ...row });
+  const handleEditIndex = useCallback(async (row: CurrentMonthRow) => {
+    let indexOld = row.indexOld;
+    // If indexOld is 0, try to fetch from historical readings
+    if (indexOld === 0) {
+      const lastReadings = await db.meterReadings
+        .where('[spaceId+utilityType+period]')
+        .between([row.spaceId, row.utilityType, Dexie.minKey], [row.spaceId, row.utilityType, Dexie.maxKey])
+        .toArray();
+      const lastReading = lastReadings.sort((a, b) => b.period.localeCompare(a.period))[0];
+      if (lastReading) {
+        indexOld = lastReading.indexNew;
+      }
+    }
+    setEditingRow({ ...row, indexOld });
     setEditIndexNew(String(row.indexNew || ''));
     setEditDialogOpen(true);
-  };
+  }, []);
 
   const handleSaveIndex = async () => {
     if (!editingRow || !editingRow.dbId) return;
