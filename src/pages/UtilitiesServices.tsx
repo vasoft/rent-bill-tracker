@@ -8,10 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { History, Calendar, Zap, Flame, Droplets, Calculator, Play, Pencil, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+import SummaryStats, { type SummaryStatsData } from '@/components/utilities/SummaryStats';
 
 const UtilitiesServices = () => {
   const {
@@ -42,6 +43,23 @@ const UtilitiesServices = () => {
   const [editingRow, setEditingRow] = useState<CurrentMonthRow | null>(null);
   const [editIndexNew, setEditIndexNew] = useState<string>('');
 
+  // Close period confirmation dialog
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+
+  // Helper to compute summary stats from any row array
+  const computeStats = (rows: { spaceId: string; clientId: string; consumption: number; unit: string; netValue: number; vatValue: number; totalValue: number }[]): SummaryStatsData => {
+    const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+    return {
+      spacesCount: new Set(rows.map(r => r.spaceId)).size,
+      clientsCount: new Set(rows.map(r => r.clientId)).size,
+      totalConsumption: fmt(rows.reduce((s, r) => s + r.consumption, 0)),
+      totalNetValue: fmt(rows.reduce((s, r) => s + r.netValue, 0)),
+      totalVat: fmt(rows.reduce((s, r) => s + r.vatValue, 0)),
+      totalValue: fmt(rows.reduce((s, r) => s + r.totalValue, 0)),
+    };
+  };
+
+  const historyStats = useMemo(() => computeStats(historyData), [historyData]);
   // Set default history period once loaded
   useEffect(() => {
     if (historicalPeriods.length > 0 && !historyPeriodFilter) {
@@ -67,6 +85,8 @@ const UtilitiesServices = () => {
     }
     return data;
   }, [currentMonthData, currentUtilityFilter, calculationType, currentPeriod, recalculateValues]);
+
+  const currentStats = useMemo(() => computeStats(filteredCurrentMonthData), [filteredCurrentMonthData]);
 
   const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number): number => {
     const diff = Math.max(0, indexNew - indexOld);
@@ -101,6 +121,7 @@ const UtilitiesServices = () => {
 
   const handleClosePeriod = async () => {
     await closePeriod(currentPeriod);
+    setCloseConfirmOpen(false);
   };
 
   const getUtilityColor = (type: UtilityType) => {
@@ -193,6 +214,8 @@ const UtilitiesServices = () => {
                 </Select>
               </div>
             </div>
+
+            {historyData.length > 0 && <SummaryStats data={historyStats} />}
 
             <div className="utility-card overflow-hidden">
               <Table>
@@ -288,13 +311,15 @@ const UtilitiesServices = () => {
                   </Button>
                 )}
                 {isInitialized && (
-                  <Button variant="destructive" className="gap-2" onClick={handleClosePeriod}>
+                  <Button variant="destructive" className="gap-2" onClick={() => setCloseConfirmOpen(true)}>
                     <Lock className="w-4 h-4" />
                     Închidere Perioadă
                   </Button>
                 )}
               </div>
             </div>
+
+            {isInitialized && filteredCurrentMonthData.length > 0 && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
               {calculationType === 'consumption' ? (
@@ -490,6 +515,28 @@ const UtilitiesServices = () => {
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Anulează</Button>
               <Button onClick={handleSaveIndex}>Salvează</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Close Period Confirmation Dialog */}
+        <Dialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Confirmare Închidere Perioadă</DialogTitle>
+              <DialogDescription>
+                Sunteți sigur că doriți să închideți perioada {formatPeriod(currentPeriod)}? Datele vor fi transferate în istoric și nu vor mai putea fi modificate.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <SummaryStats data={currentStats} compact />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setCloseConfirmOpen(false)}>Anulează</Button>
+              <Button variant="destructive" onClick={handleClosePeriod}>
+                <Lock className="w-4 h-4 mr-2" />
+                Închide Perioada
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
