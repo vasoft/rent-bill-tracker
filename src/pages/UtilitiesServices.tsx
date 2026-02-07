@@ -86,7 +86,17 @@ const UtilitiesServices = () => {
     return data;
   }, [currentMonthData, currentUtilityFilter, calculationType, currentPeriod, recalculateValues]);
 
-  const currentStats = useMemo(() => computeStats(filteredCurrentMonthData), [filteredCurrentMonthData]);
+  // Live preview: if editing a row, substitute its consumption with the preview value
+  const liveCurrentMonthData = useMemo(() => {
+    if (!editDialogOpen || !editingRow) return filteredCurrentMonthData;
+    const previewIndexNew = parseFloat(editIndexNew) || 0;
+    const previewConsumption = calculateConsumption(editingRow.utilityType, editingRow.indexOld, previewIndexNew, editingRow.constant);
+    return filteredCurrentMonthData.map(item =>
+      item.id === editingRow.id ? { ...item, consumption: previewConsumption, indexNew: previewIndexNew } : item
+    );
+  }, [filteredCurrentMonthData, editDialogOpen, editingRow, editIndexNew]);
+
+  const currentStats = useMemo(() => computeStats(liveCurrentMonthData), [liveCurrentMonthData]);
 
   const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number): number => {
     const diff = Math.max(0, indexNew - indexOld);
