@@ -1,17 +1,17 @@
 import { Space, Client, Supplier, MeterReading, SupplierInvoice, ConsumptionDistribution, MonthlyStats } from '@/types/utility';
 
 export const spaces: Space[] = [
-  { id: 'P1', name: 'Parter-NordEst1', area: 185, persons: 1, clientId: 'CL1', racordEE: true, racordGN: true, racordAA: true },
-  { id: 'P2', name: 'Parter-NordEst2', area: 25, persons: 1, clientId: 'CL1', racordEE: true, racordGN: false, racordAA: false },
-  { id: 'P3', name: 'Parter-SudEst', area: 450, persons: 1, clientId: 'CL2', racordEE: true, racordGN: false, racordAA: true },
-  { id: 'P4', name: 'Parter-Sud', area: 79, persons: 1, clientId: 'CL3', racordEE: true, racordGN: false, racordAA: true },
-  { id: 'P5', name: 'Parter-SudVest', area: 790, persons: 10, clientId: 'CL4', racordEE: true, racordGN: true, racordAA: true },
-  { id: 'P6', name: 'Parter-Vest', area: 240, persons: 2, clientId: 'CL5', racordEE: true, racordGN: false, racordAA: true },
-  { id: 'P7', name: 'Parter-NordVest1', area: 40, persons: 1, clientId: 'CL6', racordEE: true, racordGN: false, racordAA: false },
-  { id: 'P8', name: 'Parter-NordVest2', area: 420, persons: 3, clientId: 'CL6', racordEE: true, racordGN: true, racordAA: true },
-  { id: 'E1', name: 'Etaj-CentralEst', area: 150, persons: 1, clientId: 'CL7', racordEE: true, racordGN: false, racordAA: true },
-  { id: 'E2', name: 'Etaj-NordVest1', area: 100, persons: 0, clientId: null, racordEE: true, racordGN: false, racordAA: false },
-  { id: 'E3', name: 'Etaj-NordVest2', area: 21, persons: 1, clientId: 'CL8', racordEE: true, racordGN: false, racordAA: false },
+  { id: 'P1', name: 'Parter-NordEst1', area: 185, persons: 1, clientId: 'CL1', racordEE: 'EET1', racordGN: 'GNB1', racordAA: 'AAR1' },
+  { id: 'P2', name: 'Parter-NordEst2', area: 25, persons: 1, clientId: 'CL1', racordEE: 'EET2', racordGN: '', racordAA: '' },
+  { id: 'P3', name: 'Parter-SudEst', area: 450, persons: 1, clientId: 'CL2', racordEE: 'EET3', racordGN: '', racordAA: 'AAR2' },
+  { id: 'P4', name: 'Parter-Sud', area: 79, persons: 1, clientId: 'CL3', racordEE: 'EET4', racordGN: '', racordAA: 'AAR3' },
+  { id: 'P5', name: 'Parter-SudVest', area: 790, persons: 10, clientId: 'CL4', racordEE: 'EET5', racordGN: 'GNB2', racordAA: 'AAR4' },
+  { id: 'P6', name: 'Parter-Vest', area: 240, persons: 2, clientId: 'CL5', racordEE: 'EET6', racordGN: '', racordAA: 'AAR5' },
+  { id: 'P7', name: 'Parter-NordVest1', area: 40, persons: 1, clientId: 'CL6', racordEE: 'EET7', racordGN: '', racordAA: '' },
+  { id: 'P8', name: 'Parter-NordVest2', area: 420, persons: 3, clientId: 'CL6', racordEE: 'EET8', racordGN: 'GNB3', racordAA: 'AAR6' },
+  { id: 'E1', name: 'Etaj-CentralEst', area: 150, persons: 1, clientId: 'CL7', racordEE: 'EET9', racordGN: '', racordAA: 'AAR7' },
+  { id: 'E2', name: 'Etaj-NordVest1', area: 100, persons: 0, clientId: null, racordEE: 'EET10', racordGN: '', racordAA: '' },
+  { id: 'E3', name: 'Etaj-NordVest2', area: 21, persons: 1, clientId: 'CL8', racordEE: 'EET11', racordGN: '', racordAA: '' },
 ];
 
 export const clients: Client[] = [

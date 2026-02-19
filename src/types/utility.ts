@@ -17,9 +17,9 @@ export interface Space {
   area: number; // mp
   persons: number;
   clientId: string | null;
-  racordEE: boolean;
-  racordGN: boolean;
-  racordAA: boolean;
+  racordEE: string; // empty = no connection, filled = connection name (e.g. "EET1")
+  racordGN: string; // empty = no connection, filled = connection name (e.g. "GNB1")
+  racordAA: string; // empty = no connection, filled = connection name (e.g. "AAR1")
 }
 
 export interface Client {
