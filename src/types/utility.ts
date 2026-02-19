@@ -17,6 +17,9 @@ export interface Space {
   area: number; // mp
   persons: number;
   clientId: string | null;
+  racordEE: boolean;
+  racordGN: boolean;
+  racordAA: boolean;
 }
 
 export interface Client {
