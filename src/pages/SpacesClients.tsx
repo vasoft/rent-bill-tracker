@@ -300,6 +300,9 @@ const SpacesClients = () => {
                     <TableHead>ID</TableHead>
                     <TableHead>Denumire</TableHead>
                     <TableHead className="text-right">Suprafață (mp)</TableHead>
+                    <TableHead>Racord EE</TableHead>
+                    <TableHead>Racord GN</TableHead>
+                    <TableHead>Racord AA</TableHead>
                     <TableHead>Client</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Acțiuni</TableHead>
@@ -311,6 +314,9 @@ const SpacesClients = () => {
                       <TableCell className="font-mono text-sm">{space.id}</TableCell>
                       <TableCell className="font-medium">{space.name}</TableCell>
                       <TableCell className="text-right">{space.area.toLocaleString('ro-RO')}</TableCell>
+                      <TableCell>{space.racordEE || '-'}</TableCell>
+                      <TableCell>{space.racordGN || '-'}</TableCell>
+                      <TableCell>{space.racordAA || '-'}</TableCell>
                       <TableCell>{getClientName(space.clientId)}</TableCell>
                       <TableCell>
                         <Badge variant={space.clientId ? "default" : "secondary"}>
@@ -342,7 +348,7 @@ const SpacesClients = () => {
                   ))}
                   {filteredSpaces.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                         Nu au fost găsite spații
                       </TableCell>
                     </TableRow>
