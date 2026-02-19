@@ -20,7 +20,6 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Space } from '@/types/utility';
 import { toast } from '@/components/ui/use-toast';
 import { AlertTriangle } from 'lucide-react';
@@ -29,9 +28,9 @@ const spaceSchema = z.object({
   id: z.string().min(1, 'ID-ul este obligatoriu').max(10, 'ID-ul trebuie să aibă maxim 10 caractere'),
   name: z.string().min(1, 'Denumirea este obligatorie').max(50, 'Denumirea trebuie să aibă maxim 50 caractere'),
   area: z.coerce.number().min(0.01, 'Suprafața trebuie să fie mai mare de 0'),
-  racordEE: z.boolean().default(false),
-  racordGN: z.boolean().default(false),
-  racordAA: z.boolean().default(false),
+  racordEE: z.string().default(''),
+  racordGN: z.string().default(''),
+  racordAA: z.string().default(''),
 });
 
 type SpaceFormValues = z.infer<typeof spaceSchema>;
@@ -59,9 +58,9 @@ export const SpaceForm = ({
       id: '',
       name: '',
       area: 0,
-      racordEE: false,
-      racordGN: false,
-      racordAA: false,
+      racordEE: '',
+      racordGN: '',
+      racordAA: '',
     },
   });
 
@@ -72,31 +71,29 @@ export const SpaceForm = ({
           id: '',
           name: '',
           area: 0,
-          racordEE: false,
-          racordGN: false,
-          racordAA: false,
+          racordEE: '',
+          racordGN: '',
+          racordAA: '',
         });
       } else if (space) {
         form.reset({
           id: space.id,
           name: space.name,
           area: space.area,
-          racordEE: space.racordEE ?? false,
-          racordGN: space.racordGN ?? false,
-          racordAA: space.racordAA ?? false,
+          racordEE: space.racordEE ?? '',
+          racordGN: space.racordGN ?? '',
+          racordAA: space.racordAA ?? '',
         });
       }
     }
   }, [open, mode, space, form]);
 
   const handleSubmit = (values: SpaceFormValues) => {
-    // Check for duplicate ID on add
     if (mode === 'add' && existingIds.includes(values.id)) {
       form.setError('id', { message: 'Acest ID există deja' });
       return;
     }
     
-    // Check for duplicate ID on edit (if changed)
     if (mode === 'edit' && space && values.id !== space.id && existingIds.includes(values.id)) {
       form.setError('id', { message: 'Acest ID există deja' });
       return;
@@ -119,7 +116,7 @@ export const SpaceForm = ({
 
   const handleDelete = () => {
     if (space) {
-      onSubmit({ id: space.id, name: space.name, area: space.area }, 'delete');
+      onSubmit({ id: space.id, name: space.name, area: space.area, racordEE: '', racordGN: '', racordAA: '' }, 'delete');
       onOpenChange(false);
       toast({
         title: 'Succes',
@@ -253,16 +250,20 @@ export const SpaceForm = ({
 
             <div className="space-y-3">
               <FormLabel>Dotări / Racorduri</FormLabel>
-              <div className="flex flex-wrap gap-4">
+              <p className="text-xs text-muted-foreground">
+                Completați denumirea racordului (ex: EET1, GNB1, AAR1). Lăsați gol dacă spațiul nu are racord.
+              </p>
+              <div className="grid grid-cols-3 gap-3">
                 <FormField
                   control={form.control}
                   name="racordEE"
                   render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormItem>
+                      <FormLabel className="text-xs">Racord EE</FormLabel>
                       <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        <Input placeholder="ex: EET1" {...field} />
                       </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">Racord EE</FormLabel>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -270,11 +271,12 @@ export const SpaceForm = ({
                   control={form.control}
                   name="racordGN"
                   render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormItem>
+                      <FormLabel className="text-xs">Racord GN</FormLabel>
                       <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        <Input placeholder="ex: GNB1" {...field} />
                       </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">Racord GN</FormLabel>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -282,11 +284,12 @@ export const SpaceForm = ({
                   control={form.control}
                   name="racordAA"
                   render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormItem>
+                      <FormLabel className="text-xs">Racord AA</FormLabel>
                       <FormControl>
-                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                        <Input placeholder="ex: AAR1" {...field} />
                       </FormControl>
-                      <FormLabel className="font-normal cursor-pointer">Racord AA</FormLabel>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

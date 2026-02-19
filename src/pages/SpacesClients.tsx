@@ -91,7 +91,7 @@ const SpacesClients = () => {
     setSpaceFormOpen(true);
   };
 
-  const handleSpaceFormSubmit = (data: { id: string; name: string; area: number; racordEE?: boolean; racordGN?: boolean; racordAA?: boolean }, mode: 'add' | 'edit' | 'delete') => {
+  const handleSpaceFormSubmit = (data: { id: string; name: string; area: number; racordEE?: string; racordGN?: string; racordAA?: string }, mode: 'add' | 'edit' | 'delete') => {
     if (mode === 'add') {
       const newSpace: Space = {
         id: data.id,
@@ -99,9 +99,9 @@ const SpacesClients = () => {
         area: data.area,
         persons: 0,
         clientId: null,
-        racordEE: data.racordEE ?? false,
-        racordGN: data.racordGN ?? false,
-        racordAA: data.racordAA ?? false,
+        racordEE: data.racordEE ?? '',
+        racordGN: data.racordGN ?? '',
+        racordAA: data.racordAA ?? '',
       };
       setSpacesList(prev => [...prev, newSpace]);
     } else if (mode === 'edit') {
