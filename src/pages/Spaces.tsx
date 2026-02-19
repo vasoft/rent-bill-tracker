@@ -56,20 +56,23 @@ const Spaces = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = (data: { id: string; name: string; area: number }, mode: 'add' | 'edit' | 'delete') => {
+  const handleFormSubmit = (data: { id: string; name: string; area: number; racordEE?: boolean; racordGN?: boolean; racordAA?: boolean }, mode: 'add' | 'edit' | 'delete') => {
     if (mode === 'add') {
       const newSpace: Space = {
         id: data.id,
         name: data.name,
         area: data.area,
-        persons: 0, // Persoanele sunt gestionate prin Clienți
+        persons: 0,
         clientId: null,
+        racordEE: data.racordEE ?? false,
+        racordGN: data.racordGN ?? false,
+        racordAA: data.racordAA ?? false,
       };
       setSpacesList(prev => [...prev, newSpace]);
     } else if (mode === 'edit') {
       setSpacesList(prev => 
         prev.map(s => s.id === selectedSpace?.id 
-          ? { ...s, name: data.name, area: data.area }
+          ? { ...s, name: data.name, area: data.area, racordEE: data.racordEE ?? s.racordEE, racordGN: data.racordGN ?? s.racordGN, racordAA: data.racordAA ?? s.racordAA }
           : s
         )
       );

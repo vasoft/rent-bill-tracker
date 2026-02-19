@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Space } from '@/types/utility';
 import { toast } from '@/components/ui/use-toast';
 import { AlertTriangle } from 'lucide-react';
@@ -28,6 +29,9 @@ const spaceSchema = z.object({
   id: z.string().min(1, 'ID-ul este obligatoriu').max(10, 'ID-ul trebuie să aibă maxim 10 caractere'),
   name: z.string().min(1, 'Denumirea este obligatorie').max(50, 'Denumirea trebuie să aibă maxim 50 caractere'),
   area: z.coerce.number().min(0.01, 'Suprafața trebuie să fie mai mare de 0'),
+  racordEE: z.boolean().default(false),
+  racordGN: z.boolean().default(false),
+  racordAA: z.boolean().default(false),
 });
 
 type SpaceFormValues = z.infer<typeof spaceSchema>;
@@ -55,6 +59,9 @@ export const SpaceForm = ({
       id: '',
       name: '',
       area: 0,
+      racordEE: false,
+      racordGN: false,
+      racordAA: false,
     },
   });
 
@@ -65,12 +72,18 @@ export const SpaceForm = ({
           id: '',
           name: '',
           area: 0,
+          racordEE: false,
+          racordGN: false,
+          racordAA: false,
         });
       } else if (space) {
         form.reset({
           id: space.id,
           name: space.name,
           area: space.area,
+          racordEE: space.racordEE ?? false,
+          racordGN: space.racordGN ?? false,
+          racordAA: space.racordAA ?? false,
         });
       }
     }
@@ -237,6 +250,48 @@ export const SpaceForm = ({
                 </FormItem>
               )}
             />
+
+            <div className="space-y-3">
+              <FormLabel>Dotări / Racorduri</FormLabel>
+              <div className="flex flex-wrap gap-4">
+                <FormField
+                  control={form.control}
+                  name="racordEE"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">Racord EE</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="racordGN"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">Racord GN</FormLabel>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="racordAA"
+                  render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                      <FormLabel className="font-normal cursor-pointer">Racord AA</FormLabel>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
 
             <DialogFooter className="gap-2 sm:gap-0 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
