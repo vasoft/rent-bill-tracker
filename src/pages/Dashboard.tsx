@@ -3,7 +3,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import UtilityChart from '@/components/dashboard/UtilityChart';
 import UtilityBreakdown from '@/components/dashboard/UtilityBreakdown';
 import ClientsTable from '@/components/dashboard/ClientsTable';
-import QuickActions from '@/components/dashboard/QuickActions';
+
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import { monthlyStats, clients, spaces, supplierInvoices } from '@/data/mockData';
 import { Zap, Droplets, Flame, Users, Building2, FileText } from 'lucide-react';
@@ -92,7 +92,6 @@ const Dashboard = () => {
             <ClientsTable />
           </div>
           <div className="space-y-6">
-            <QuickActions />
             <RecentInvoices />
           </div>
         </div>
