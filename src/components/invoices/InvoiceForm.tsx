@@ -32,6 +32,24 @@ import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
+const parsePeriodInput = (input: string): string | null => {
+  // Accept MM.YY or MM.YYYY
+  const match = input.match(/^(\d{1,2})[.\-/](\d{2,4})$/);
+  if (!match) return null;
+  const month = parseInt(match[1], 10);
+  let year = parseInt(match[2], 10);
+  if (year < 100) year += 2000;
+  if (month < 1 || month > 12) return null;
+  return `${year}-${String(month).padStart(2, '0')}`;
+};
+
+const formatPeriodToInput = (period: string): string => {
+  if (!period) return '';
+  const [year, month] = period.split('-');
+  if (!year || !month) return period;
+  return `${month}.${year.slice(-2)}`;
+};
+
 const invoiceSchema = z.object({
   invoiceNumber: z.string().min(1, 'Nr. factură este obligatoriu').max(50),
   supplierId: z.string().min(1, 'Furnizorul este obligatoriu'),
