@@ -22,6 +22,7 @@ const UtilitiesServices = () => {
     historicalPeriods,
     currentMonthData,
     isInitialized,
+    setIsInitialized,
     currentPeriod,
     setCurrentPeriod,
     getHistoryData,
@@ -29,6 +30,7 @@ const UtilitiesServices = () => {
     updateReading,
     recalculateValues,
     closePeriod,
+    loadPeriodData,
   } = useUtilitiesDb();
 
   // Filters
@@ -47,6 +49,23 @@ const UtilitiesServices = () => {
 
   // Close period confirmation dialog
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+
+  // Generate available consumption periods (last 12 months + next 3 months from now)
+  const availableConsumptionPeriods = useMemo(() => {
+    const periods = new Set<string>();
+    // Add current period
+    if (currentPeriod) periods.add(currentPeriod);
+    // Add all historical periods (already closed - will show as selectable but re-initializable)
+    historicalPeriods.forEach(p => periods.add(p));
+    // Generate from 12 months ago to 3 months ahead
+    const now = new Date();
+    for (let i = -12; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const p = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      periods.add(p);
+    }
+    return Array.from(periods).sort().reverse();
+  }, [currentPeriod, historicalPeriods]);
 
   // Per-utility closing workflow
   const [closedUtilities, setClosedUtilities] = useState<Set<string>>(new Set());
@@ -261,7 +280,7 @@ const UtilitiesServices = () => {
             </TabsTrigger>
             <TabsTrigger value="current" className="gap-2">
               <Calendar className="w-4 h-4" />
-              Luna Curentă
+              Luna de Consum
             </TabsTrigger>
           </TabsList>
 
@@ -351,13 +370,19 @@ const UtilitiesServices = () => {
           <TabsContent value="current" className="space-y-4">
             <div className="flex flex-col sm:flex-row gap-4 justify-between">
               <div className="flex gap-3 flex-wrap">
-                <Select value={currentPeriod} onValueChange={setCurrentPeriod}>
+                <Select value={currentPeriod} onValueChange={(val) => {
+                  setCurrentPeriod(val);
+                  setClosedUtilities(new Set());
+                  loadPeriodData(val);
+                }}>
                   <SelectTrigger className="w-[150px]">
                     <Calendar className="w-4 h-4 mr-2" />
                     <SelectValue placeholder="Perioadă" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={currentPeriod}>{formatPeriod(currentPeriod)}</SelectItem>
+                    {availableConsumptionPeriods.map(period => (
+                      <SelectItem key={period} value={period}>{formatPeriod(period)}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <Select value={currentUtilityFilter} onValueChange={setCurrentUtilityFilter}>
