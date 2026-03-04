@@ -206,22 +206,6 @@ const InvoiceForm = ({
     return colors[type] || 'bg-muted text-muted-foreground';
   };
 
-  // Generate period options (current month + next 12 months)
-  const generatePeriodOptions = () => {
-    const periods: string[] = [];
-    const currentDate = new Date();
-    
-    for (let i = 0; i < 13; i++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
-      const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      periods.push(period);
-    }
-    
-    return periods;
-  };
-
-  const periodOptions = generatePeriodOptions();
-
   const formatPeriodDisplay = (period: string) => {
     const [year, month] = period.split('-');
     const date = new Date(Number(year), Number(month) - 1, 1);
