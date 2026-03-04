@@ -284,11 +284,23 @@ export function useUtilitiesDb() {
     toast.success(`Perioada ${period} a fost închisă și transferată în istoric!`);
   }, [recalculateValues]);
 
+  const loadPeriodData = useCallback(async (period: string) => {
+    const existing = await db.currentMonth.where('period').equals(period).toArray();
+    if (existing.length > 0) {
+      setCurrentMonthData(existing.map(mapDbToRow));
+      setIsInitialized(true);
+    } else {
+      setCurrentMonthData([]);
+      setIsInitialized(false);
+    }
+  }, []);
+
   return {
     ready,
     historicalPeriods,
     currentMonthData,
     isInitialized,
+    setIsInitialized,
     currentPeriod,
     setCurrentPeriod,
     getHistoryData,
@@ -296,6 +308,7 @@ export function useUtilitiesDb() {
     updateReading,
     recalculateValues,
     closePeriod,
+    loadPeriodData,
   };
 }
 
