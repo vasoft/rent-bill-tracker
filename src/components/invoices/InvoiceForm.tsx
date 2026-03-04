@@ -32,6 +32,24 @@ import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
+const parsePeriodInput = (input: string): string | null => {
+  // Accept MM.YY or MM.YYYY
+  const match = input.match(/^(\d{1,2})[.\-/](\d{2,4})$/);
+  if (!match) return null;
+  const month = parseInt(match[1], 10);
+  let year = parseInt(match[2], 10);
+  if (year < 100) year += 2000;
+  if (month < 1 || month > 12) return null;
+  return `${year}-${String(month).padStart(2, '0')}`;
+};
+
+const formatPeriodToInput = (period: string): string => {
+  if (!period) return '';
+  const [year, month] = period.split('-');
+  if (!year || !month) return period;
+  return `${month}.${year.slice(-2)}`;
+};
+
 const invoiceSchema = z.object({
   invoiceNumber: z.string().min(1, 'Nr. factură este obligatoriu').max(50),
   supplierId: z.string().min(1, 'Furnizorul este obligatoriu'),
@@ -187,22 +205,6 @@ const InvoiceForm = ({
     };
     return colors[type] || 'bg-muted text-muted-foreground';
   };
-
-  // Generate period options (current month + next 12 months)
-  const generatePeriodOptions = () => {
-    const periods: string[] = [];
-    const currentDate = new Date();
-    
-    for (let i = 0; i < 13; i++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() + i, 1);
-      const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      periods.push(period);
-    }
-    
-    return periods;
-  };
-
-  const periodOptions = generatePeriodOptions();
 
   const formatPeriodDisplay = (period: string) => {
     const [year, month] = period.split('-');
@@ -425,34 +427,57 @@ const InvoiceForm = ({
               )}
             />
 
-            {/* Period Select */}
+            {/* Period Input MM.YY */}
             <FormField
               control={form.control}
               name="period"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Perioada</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={mode === 'view'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selectează perioada" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {periodOptions.map((period) => (
-                        <SelectItem key={period} value={period}>
-                          {formatPeriodDisplay(period)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const displayValue = mode === 'view' 
+                  ? formatPeriodToInput(field.value)
+                  : undefined;
+                const consumptionMonth = field.value 
+                  ? formatPeriodDisplay(field.value) 
+                  : null;
+
+                return (
+                  <FormItem>
+                    <FormLabel>Perioada de consum</FormLabel>
+                    {mode === 'view' ? (
+                      <FormControl>
+                        <Input value={displayValue} disabled />
+                      </FormControl>
+                    ) : (
+                      <FormControl>
+                        <Input
+                          placeholder="MM.YY (ex: 03.26)"
+                          defaultValue={formatPeriodToInput(field.value)}
+                          onChange={(e) => {
+                            const parsed = parsePeriodInput(e.target.value);
+                            if (parsed) {
+                              field.onChange(parsed);
+                            } else if (e.target.value === '') {
+                              field.onChange('');
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const parsed = parsePeriodInput(e.target.value);
+                            if (!parsed && e.target.value !== '') {
+                              // Reset to last valid value
+                              e.target.value = formatPeriodToInput(field.value);
+                            }
+                          }}
+                        />
+                      </FormControl>
+                    )}
+                    {consumptionMonth && (
+                      <p className="text-xs text-muted-foreground">
+                        Luna de consum: <span className="font-medium text-foreground">{consumptionMonth}</span>
+                      </p>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             {/* Invoice Number */}
