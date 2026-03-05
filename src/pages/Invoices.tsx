@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { supplierInvoices, suppliers as initialSuppliers } from '@/data/mockData';
+import { suppliers as initialSuppliers } from '@/data/mockData';
+import { db } from '@/lib/db';
 import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo } from '@/types/utility';
 import { 
   Table, 
@@ -26,12 +27,35 @@ import InvoiceForm from '@/components/invoices/InvoiceForm';
 const Invoices = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [utilityFilter, setUtilityFilter] = useState<string>('all');
-  const [invoicesList, setInvoicesList] = useState<SupplierInvoice[]>(supplierInvoices);
+  const [invoicesList, setInvoicesList] = useState<SupplierInvoice[]>([]);
   const [suppliersList, setSuppliersList] = useState<Supplier[]>(initialSuppliers);
   const [utilitiesList, setUtilitiesList] = useState<UtilityInfo[]>([...UTILITIES]);
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'view'>('add');
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
+
+  // Load invoices from Dexie on mount
+  useEffect(() => {
+    db.supplierInvoices.toArray().then(dbInvoices => {
+      setInvoicesList(dbInvoices.map(inv => ({
+        id: inv.externalId,
+        supplierId: inv.supplierId,
+        utilityType: inv.utilityType,
+        period: inv.period,
+        invoiceNumber: inv.invoiceNumber,
+        issueDate: inv.issueDate,
+        indexNew: inv.indexNew,
+        indexOld: inv.indexOld,
+        constant: inv.constant,
+        pcs: inv.pcs,
+        totalConsumption: inv.totalConsumption,
+        netValue: inv.netValue,
+        vatRate: inv.vatRate,
+        vatValue: inv.vatValue,
+        totalValue: inv.totalValue,
+      })));
+    });
+  }, []);
 
   const invoicesWithDetails = invoicesList.map(invoice => {
     const supplier = suppliersList.find(s => s.id === invoice.supplierId);
@@ -81,7 +105,7 @@ const Invoices = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = (data: {
+  const handleFormSubmit = async (data: {
     invoiceNumber: string;
     supplierId: string;
     utilityType: string;
@@ -91,8 +115,9 @@ const Invoices = () => {
     vatRate: number;
     vatValue: number;
   }) => {
+    const externalId = `INV${Date.now()}`;
     const newInvoice: SupplierInvoice = {
-      id: `INV${Date.now()}`,
+      id: externalId,
       supplierId: data.supplierId,
       utilityType: data.utilityType as UtilityType,
       period: data.period,
@@ -104,6 +129,20 @@ const Invoices = () => {
       vatValue: data.vatValue,
       totalValue: data.netValue + data.vatValue,
     };
+    // Persist to Dexie
+    await db.supplierInvoices.add({
+      externalId,
+      supplierId: data.supplierId,
+      utilityType: data.utilityType as UtilityType,
+      period: data.period,
+      invoiceNumber: data.invoiceNumber,
+      issueDate: newInvoice.issueDate,
+      totalConsumption: data.totalConsumption,
+      netValue: data.netValue,
+      vatRate: data.vatRate,
+      vatValue: data.vatValue,
+      totalValue: newInvoice.totalValue,
+    });
     setInvoicesList(prev => [...prev, newInvoice]);
   };
 
