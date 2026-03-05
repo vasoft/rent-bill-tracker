@@ -359,7 +359,7 @@ const UtilitiesServices = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right font-mono">
-                          {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.unit}
+                          {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.utilityType === 'GN' ? 'kWh' : item.unit}
                         </TableCell>
                         <TableCell className="text-right">
                           {item.netValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
@@ -535,7 +535,7 @@ const UtilitiesServices = () => {
                             {item.constant.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
                           </TableCell>
                           <TableCell className="text-right font-semibold">
-                            {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.unit}
+                            {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.utilityType === 'GN' ? 'kWh' : item.unit}
                           </TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditIndex(item)}>
@@ -585,7 +585,7 @@ const UtilitiesServices = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono">
-                            {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.unit}
+                            {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.utilityType === 'GN' ? 'kWh' : item.unit}
                           </TableCell>
                           <TableCell className="text-right">
                             {item.netValue > 0
