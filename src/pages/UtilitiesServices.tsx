@@ -663,16 +663,34 @@ const UtilitiesServices = () => {
                     step="0.001"
                   />
                 </div>
-                <div className="p-3 bg-muted rounded-lg">
+                <div className="p-3 bg-muted rounded-lg space-y-1">
                   <p className="text-sm text-muted-foreground">Consum calculat:</p>
-                  <p className="text-xl font-bold">
-                    {calculateConsumption(
-                      editingRow.utilityType,
-                      editingRow.indexOld,
-                      parseFloat(editIndexNew) || 0,
-                      editingRow.constant
-                    ).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
-                  </p>
+                  {editingRow.utilityType === 'GN' ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Diferență indexe: <span className="font-semibold text-foreground">
+                          {Math.max(0, (parseFloat(editIndexNew) || 0) - editingRow.indexOld).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} Nmc
+                        </span>
+                      </p>
+                      <p className="text-xl font-bold">
+                        {calculateConsumption(
+                          editingRow.utilityType,
+                          editingRow.indexOld,
+                          parseFloat(editIndexNew) || 0,
+                          editingRow.constant
+                        ).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} kWh
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xl font-bold">
+                      {calculateConsumption(
+                        editingRow.utilityType,
+                        editingRow.indexOld,
+                        parseFloat(editIndexNew) || 0,
+                        editingRow.constant
+                      ).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
+                    </p>
+                  )}
                 </div>
               </div>
             )}
