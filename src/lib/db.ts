@@ -63,19 +63,27 @@ export interface DbSupplierInvoice {
   totalValue: number;
 }
 
+export interface DbConfirmedUtility {
+  id?: number;
+  period: string;
+  utilityType: UtilityType;
+}
+
 class OffGusDatabase extends Dexie {
   meterReadings!: Table<DbMeterReading>;
   distributions!: Table<DbDistribution>;
   currentMonth!: Table<DbCurrentMonth>;
   supplierInvoices!: Table<DbSupplierInvoice>;
+  confirmedUtilities!: Table<DbConfirmedUtility>;
 
   constructor() {
     super('offgus-db');
-    this.version(2).stores({
+    this.version(3).stores({
       meterReadings: '++id, spaceId, utilityType, period, [spaceId+utilityType+period]',
       distributions: '++id, spaceId, clientId, utilityType, period, [clientId+period]',
       currentMonth: '++id, spaceId, clientId, utilityType, period, [spaceId+utilityType+period]',
       supplierInvoices: '++id, externalId, supplierId, utilityType, period, [utilityType+period]',
+      confirmedUtilities: '++id, period, utilityType, [period+utilityType]',
     });
   }
 }
