@@ -49,6 +49,8 @@ const Invoices = () => {
         constant: inv.constant,
         pcs: inv.pcs,
         totalConsumption: inv.totalConsumption,
+        netValueTaxable: inv.netValueTaxable ?? inv.netValue,
+        netValueExempt: inv.netValueExempt ?? 0,
         netValue: inv.netValue,
         vatRate: inv.vatRate,
         vatValue: inv.vatValue,
@@ -111,11 +113,13 @@ const Invoices = () => {
     utilityType: string;
     period: string;
     totalConsumption: number;
-    netValue: number;
+    netValueTaxable: number;
+    netValueExempt: number;
     vatRate: number;
     vatValue: number;
   }) => {
     const externalId = `INV${Date.now()}`;
+    const netValue = data.netValueTaxable + data.netValueExempt;
     const newInvoice: SupplierInvoice = {
       id: externalId,
       supplierId: data.supplierId,
@@ -124,12 +128,13 @@ const Invoices = () => {
       invoiceNumber: data.invoiceNumber,
       issueDate: new Date().toISOString().split('T')[0],
       totalConsumption: data.totalConsumption,
-      netValue: data.netValue,
+      netValueTaxable: data.netValueTaxable,
+      netValueExempt: data.netValueExempt,
+      netValue,
       vatRate: data.vatRate,
       vatValue: data.vatValue,
-      totalValue: data.netValue + data.vatValue,
+      totalValue: netValue + data.vatValue,
     };
-    // Persist to Dexie
     await db.supplierInvoices.add({
       externalId,
       supplierId: data.supplierId,
@@ -138,7 +143,9 @@ const Invoices = () => {
       invoiceNumber: data.invoiceNumber,
       issueDate: newInvoice.issueDate,
       totalConsumption: data.totalConsumption,
-      netValue: data.netValue,
+      netValueTaxable: data.netValueTaxable,
+      netValueExempt: data.netValueExempt,
+      netValue,
       vatRate: data.vatRate,
       vatValue: data.vatValue,
       totalValue: newInvoice.totalValue,

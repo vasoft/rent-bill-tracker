@@ -55,6 +55,8 @@ export interface DbSupplierInvoice {
   constant?: number;
   pcs?: number;
   totalConsumption: number;
+  netValueTaxable: number;
+  netValueExempt: number;
   netValue: number;
   vatRate: number;
   vatValue: number;
@@ -128,6 +130,8 @@ export async function seedIfEmpty() {
       constant: inv.constant,
       pcs: inv.pcs,
       totalConsumption: inv.totalConsumption,
+      netValueTaxable: inv.netValueTaxable ?? inv.netValue,
+      netValueExempt: inv.netValueExempt ?? 0,
       netValue: inv.netValue,
       vatRate: inv.vatRate,
       vatValue: inv.vatValue,
