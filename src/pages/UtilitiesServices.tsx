@@ -71,6 +71,7 @@ const UtilitiesServices = () => {
   const [closedUtilities, setClosedUtilities] = useState<Set<string>>(new Set());
   const [utilityCloseDialogOpen, setUtilityCloseDialogOpen] = useState(false);
   const [closingUtilityType, setClosingUtilityType] = useState<string | null>(null);
+  const [closingUtilityStats, setClosingUtilityStats] = useState<SummaryStatsData | null>(null);
 
   // Helper to compute summary stats from any row array
   const computeStats = (rows: { spaceId: string; clientId: string; consumption: number; unit: string; netValue: number; vatValue: number; totalValue: number }[]): SummaryStatsData => {
@@ -100,17 +101,26 @@ const UtilitiesServices = () => {
     }
   }, [ready, historyPeriodFilter, historyUtilityFilter, getHistoryData]);
 
-  // Filtered current month
-  const filteredCurrentMonthData = useMemo(() => {
-    let data = currentMonthData;
-    if (calculationType === 'value') {
-      data = recalculateValues(data, currentPeriod);
-    }
-    if (currentUtilityFilter !== 'all') {
-      data = data.filter(d => d.utilityType === currentUtilityFilter);
-    }
-    return data;
+  // Filtered current month with async value recalculation
+  const [calculatedData, setCalculatedData] = useState<CurrentMonthRow[]>([]);
+  
+  useEffect(() => {
+    let cancelled = false;
+    const compute = async () => {
+      let data = currentMonthData;
+      if (calculationType === 'value') {
+        data = await recalculateValues(data, currentPeriod);
+      }
+      if (currentUtilityFilter !== 'all') {
+        data = data.filter(d => d.utilityType === currentUtilityFilter);
+      }
+      if (!cancelled) setCalculatedData(data);
+    };
+    compute();
+    return () => { cancelled = true; };
   }, [currentMonthData, currentUtilityFilter, calculationType, currentPeriod, recalculateValues]);
+
+  const filteredCurrentMonthData = calculatedData;
 
   const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number): number => {
     const diff = Math.max(0, indexNew - indexOld);
@@ -149,14 +159,16 @@ const UtilitiesServices = () => {
   }, [activeUtilityTypes, closedUtilities]);
 
   // Stats for a specific utility type (for per-utility close dialog)
-  const getUtilityStats = useCallback((utilityType: string) => {
+  const getUtilityStats = useCallback(async (utilityType: string) => {
     const rows = currentMonthData.filter(r => r.utilityType === utilityType);
-    const withValues = recalculateValues(rows, currentPeriod);
+    const withValues = await recalculateValues(rows, currentPeriod);
     return computeStats(withValues);
   }, [currentMonthData, recalculateValues, currentPeriod]);
 
-  const handleConfirmUtility = (utilityType: string) => {
+  const handleConfirmUtility = async (utilityType: string) => {
     setClosingUtilityType(utilityType);
+    const stats = await getUtilityStats(utilityType);
+    setClosingUtilityStats(stats);
     setUtilityCloseDialogOpen(true);
   };
 
@@ -682,9 +694,9 @@ const UtilitiesServices = () => {
                 Confirmați că consumul și valorile repartizate pentru {closingUtilityType} în perioada {formatPeriod(currentPeriod)} sunt corecte?
               </DialogDescription>
             </DialogHeader>
-            {closingUtilityType && (
+            {closingUtilityStats && (
               <div className="py-4">
-                <SummaryStats data={getUtilityStats(closingUtilityType)} compact />
+                <SummaryStats data={closingUtilityStats} compact />
               </div>
             )}
             <DialogFooter>

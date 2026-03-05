@@ -42,17 +42,38 @@ export interface DbCurrentMonth {
   totalValue: number;
 }
 
+export interface DbSupplierInvoice {
+  id?: number;
+  externalId: string;
+  supplierId: string;
+  utilityType: UtilityType;
+  period: string;
+  invoiceNumber: string;
+  issueDate: string;
+  indexNew?: number;
+  indexOld?: number;
+  constant?: number;
+  pcs?: number;
+  totalConsumption: number;
+  netValue: number;
+  vatRate: number;
+  vatValue: number;
+  totalValue: number;
+}
+
 class OffGusDatabase extends Dexie {
   meterReadings!: Table<DbMeterReading>;
   distributions!: Table<DbDistribution>;
   currentMonth!: Table<DbCurrentMonth>;
+  supplierInvoices!: Table<DbSupplierInvoice>;
 
   constructor() {
     super('offgus-db');
-    this.version(1).stores({
+    this.version(2).stores({
       meterReadings: '++id, spaceId, utilityType, period, [spaceId+utilityType+period]',
       distributions: '++id, spaceId, clientId, utilityType, period, [clientId+period]',
       currentMonth: '++id, spaceId, clientId, utilityType, period, [spaceId+utilityType+period]',
+      supplierInvoices: '++id, externalId, supplierId, utilityType, period, [utilityType+period]',
     });
   }
 }
@@ -90,6 +111,27 @@ export async function seedIfEmpty() {
       vatValue: d.vatValue,
       totalValue: d.totalValue,
       distributionMethod: d.distributionMethod,
+    }))
+  );
+
+  const { supplierInvoices: mockInvoices } = await import('@/data/mockData');
+  await db.supplierInvoices.bulkAdd(
+    mockInvoices.map(inv => ({
+      externalId: inv.id,
+      supplierId: inv.supplierId,
+      utilityType: inv.utilityType,
+      period: inv.period,
+      invoiceNumber: inv.invoiceNumber,
+      issueDate: inv.issueDate,
+      indexNew: inv.indexNew,
+      indexOld: inv.indexOld,
+      constant: inv.constant,
+      pcs: inv.pcs,
+      totalConsumption: inv.totalConsumption,
+      netValue: inv.netValue,
+      vatRate: inv.vatRate,
+      vatValue: inv.vatValue,
+      totalValue: inv.totalValue,
     }))
   );
 }

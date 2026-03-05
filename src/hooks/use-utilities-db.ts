@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Dexie from 'dexie';
 import { db, seedIfEmpty, type DbCurrentMonth } from '@/lib/db';
 import { type UtilityType, UTILITIES } from '@/types/utility';
-import { spaces, clients, supplierInvoices } from '@/data/mockData';
+import { spaces, clients } from '@/data/mockData';
 import { toast } from 'sonner';
 
 export interface CurrentMonthRow {
@@ -201,10 +201,13 @@ export function useUtilitiesDb() {
     toast.success('Indexul a fost salvat!');
   }, []);
 
-  const recalculateValues = useCallback((data: CurrentMonthRow[], period: string): CurrentMonthRow[] => {
+  const recalculateValues = useCallback(async (data: CurrentMonthRow[], period: string): Promise<CurrentMonthRow[]> => {
+    // Read invoices from Dexie DB
+    const invoices = await db.supplierInvoices.where('period').equals(period).toArray();
+
     return data.map(item => {
-      const invoice = supplierInvoices.find(
-        inv => inv.utilityType === item.utilityType && inv.period === period
+      const invoice = invoices.find(
+        inv => inv.utilityType === item.utilityType
       );
       const totalConsumption = data
         .filter(d => d.utilityType === item.utilityType)
@@ -237,7 +240,7 @@ export function useUtilitiesDb() {
 
     // Recalculate values before closing
     const rows = currentData.map(mapDbToRow);
-    const withValues = recalculateValues(rows, period);
+    const withValues = await recalculateValues(rows, period);
 
     // Save meter readings to history
     await db.meterReadings.bulkAdd(
