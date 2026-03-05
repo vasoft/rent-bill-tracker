@@ -67,11 +67,19 @@ const UtilitiesServices = () => {
     return Array.from(periods).sort().reverse();
   }, [currentPeriod, historicalPeriods]);
 
-  // Per-utility closing workflow
+  // Per-utility closing workflow - persisted in Dexie
   const [closedUtilities, setClosedUtilities] = useState<Set<string>>(new Set());
   const [utilityCloseDialogOpen, setUtilityCloseDialogOpen] = useState(false);
   const [closingUtilityType, setClosingUtilityType] = useState<string | null>(null);
   const [closingUtilityStats, setClosingUtilityStats] = useState<SummaryStatsData | null>(null);
+
+  // Load confirmed utilities from DB when period changes
+  useEffect(() => {
+    if (!currentPeriod) return;
+    db.confirmedUtilities.where('period').equals(currentPeriod).toArray().then(rows => {
+      setClosedUtilities(new Set(rows.map(r => r.utilityType)));
+    });
+  }, [currentPeriod]);
 
   // Helper to compute summary stats from any row array
   const computeStats = (rows: { spaceId: string; clientId: string; consumption: number; unit: string; netValue: number; vatValue: number; totalValue: number }[]): SummaryStatsData => {
@@ -172,8 +180,9 @@ const UtilitiesServices = () => {
     setUtilityCloseDialogOpen(true);
   };
 
-  const handleUtilityCloseConfirmed = () => {
+  const handleUtilityCloseConfirmed = async () => {
     if (closingUtilityType) {
+      await db.confirmedUtilities.add({ period: currentPeriod, utilityType: closingUtilityType as UtilityType });
       setClosedUtilities(prev => new Set(prev).add(closingUtilityType));
       toast.success(`Utilitatea ${closingUtilityType} a fost confirmată pentru închidere.`);
     }
@@ -181,7 +190,8 @@ const UtilitiesServices = () => {
     setClosingUtilityType(null);
   };
 
-  const handleReopenUtility = (utilityType: string) => {
+  const handleReopenUtility = async (utilityType: string) => {
+    await db.confirmedUtilities.where('[period+utilityType]').equals([currentPeriod, utilityType]).delete();
     setClosedUtilities(prev => {
       const next = new Set(prev);
       next.delete(utilityType);
@@ -224,6 +234,7 @@ const UtilitiesServices = () => {
   };
 
   const handleClosePeriod = async () => {
+    await db.confirmedUtilities.where('period').equals(currentPeriod).delete();
     await closePeriod(currentPeriod);
     setClosedUtilities(new Set());
     setCloseConfirmOpen(false);
@@ -384,7 +395,6 @@ const UtilitiesServices = () => {
               <div className="flex gap-3 flex-wrap">
                 <Select value={currentPeriod} onValueChange={(val) => {
                   setCurrentPeriod(val);
-                  setClosedUtilities(new Set());
                   loadPeriodData(val);
                 }}>
                   <SelectTrigger className="w-[150px]">
