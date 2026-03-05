@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import Dexie from 'dexie';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Dexie from 'dexie/dist/dexie.mjs';
 import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
@@ -72,14 +72,24 @@ const UtilitiesServices = () => {
   const [utilityCloseDialogOpen, setUtilityCloseDialogOpen] = useState(false);
   const [closingUtilityType, setClosingUtilityType] = useState<string | null>(null);
   const [closingUtilityStats, setClosingUtilityStats] = useState<SummaryStatsData | null>(null);
+  const confirmedLoadSeqRef = useRef(0);
 
-  // Load confirmed utilities from DB when period changes
+  const loadConfirmedUtilities = useCallback(async (period: string) => {
+    if (!period) {
+      setClosedUtilities(new Set());
+      return;
+    }
+
+    const seq = ++confirmedLoadSeqRef.current;
+    const rows = await db.confirmedUtilities.where('period').equals(period).toArray();
+
+    if (seq !== confirmedLoadSeqRef.current) return;
+    setClosedUtilities(new Set(rows.map(r => r.utilityType)));
+  }, []);
+
   useEffect(() => {
-    if (!currentPeriod) return;
-    db.confirmedUtilities.where('period').equals(currentPeriod).toArray().then(rows => {
-      setClosedUtilities(new Set(rows.map(r => r.utilityType)));
-    });
-  }, [currentPeriod]);
+    void loadConfirmedUtilities(currentPeriod);
+  }, [currentPeriod, loadConfirmedUtilities]);
 
   // Helper to compute summary stats from any row array
   const computeStats = (rows: { spaceId: string; clientId: string; consumption: number; unit: string; netValue: number; vatValue: number; totalValue: number }[]): SummaryStatsData => {
@@ -182,8 +192,16 @@ const UtilitiesServices = () => {
 
   const handleUtilityCloseConfirmed = async () => {
     if (closingUtilityType) {
-      await db.confirmedUtilities.add({ period: currentPeriod, utilityType: closingUtilityType as UtilityType });
-      setClosedUtilities(prev => new Set(prev).add(closingUtilityType));
+      const existing = await db.confirmedUtilities
+        .where('[period+utilityType]')
+        .equals([currentPeriod, closingUtilityType as UtilityType])
+        .first();
+
+      if (!existing) {
+        await db.confirmedUtilities.add({ period: currentPeriod, utilityType: closingUtilityType as UtilityType });
+      }
+
+      await loadConfirmedUtilities(currentPeriod);
       toast.success(`Utilitatea ${closingUtilityType} a fost confirmată pentru închidere.`);
     }
     setUtilityCloseDialogOpen(false);
@@ -192,11 +210,7 @@ const UtilitiesServices = () => {
 
   const handleReopenUtility = async (utilityType: string) => {
     await db.confirmedUtilities.where('[period+utilityType]').equals([currentPeriod, utilityType]).delete();
-    setClosedUtilities(prev => {
-      const next = new Set(prev);
-      next.delete(utilityType);
-      return next;
-    });
+    await loadConfirmedUtilities(currentPeriod);
     toast.info(`Utilitatea ${utilityType} a fost redeschisă.`);
   };
 
@@ -464,7 +478,7 @@ const UtilitiesServices = () => {
                     title={!allUtilitiesClosed ? `Confirmați mai întâi toate utilitățile: ${activeUtilityTypes.filter(ut => !closedUtilities.has(ut)).join(', ')}` : ''}
                   >
                     <Lock className="w-4 h-4" />
-                    Închidere Perioadă ({closedUtilities.size}/{activeUtilityTypes.length})
+                    Închidere Lună Consum ({closedUtilities.size}/{activeUtilityTypes.length})
                   </Button>
                 )}
               </div>
@@ -741,9 +755,9 @@ const UtilitiesServices = () => {
         <Dialog open={closeConfirmOpen} onOpenChange={setCloseConfirmOpen}>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
-              <DialogTitle>Confirmare Închidere Perioadă</DialogTitle>
+              <DialogTitle>Confirmare Închidere Lună de Consum</DialogTitle>
               <DialogDescription>
-                Sunteți sigur că doriți să închideți perioada {formatPeriod(currentPeriod)}? Datele vor fi transferate în istoric și nu vor mai putea fi modificate.
+                Sunteți sigur că doriți să închideți luna de consum {formatPeriod(currentPeriod)}? Datele vor fi transferate în istoric și nu vor mai putea fi modificate.
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
@@ -753,7 +767,7 @@ const UtilitiesServices = () => {
               <Button variant="outline" onClick={() => setCloseConfirmOpen(false)}>Anulează</Button>
               <Button variant="destructive" onClick={handleClosePeriod}>
                 <Lock className="w-4 h-4 mr-2" />
-                Închide Perioada
+                Închide Luna de Consum
               </Button>
             </DialogFooter>
           </DialogContent>

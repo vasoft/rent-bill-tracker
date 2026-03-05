@@ -22,6 +22,7 @@
       ]
     },
     "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
     "strict": false,
     "target": "ES2020",
     "useDefineForClassFields": true

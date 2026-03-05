@@ -60,8 +60,8 @@ export interface SupplierInvoice {
   constant?: number;
   pcs?: number;
   totalConsumption: number;
-  netValueTaxable: number;  // Valoare netă cu TVA (la cota selectată)
-  netValueExempt: number;   // Valoare netă scutită TVA (cotă 0%)
+  netValueTaxable?: number; // Valoare netă cu TVA (la cota selectată)
+  netValueExempt?: number;  // Valoare netă scutită TVA (cotă 0%)
   netValue: number;         // Total net = taxable + exempt
   vatRate: number;
   vatValue: number;

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import Dexie from 'dexie';
+import Dexie from 'dexie/dist/dexie.mjs';
 import { db, seedIfEmpty, type DbCurrentMonth } from '@/lib/db';
 import { type UtilityType, UTILITIES } from '@/types/utility';
 import { spaces, clients } from '@/data/mockData';

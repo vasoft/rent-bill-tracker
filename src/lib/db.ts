@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie';
+import Dexie, { type Table } from 'dexie/dist/dexie.mjs';
 import { type UtilityType } from '@/types/utility';
 
 // Database record types
