@@ -159,6 +159,19 @@ const UtilitiesServices = () => {
     }
   }, [ready, historyPeriodFilter, historyUtilityFilter, getHistoryData]);
 
+  // Recalculated data with values (always computed for summary)
+  const [recalculatedData, setRecalculatedData] = useState<CurrentMonthRow[]>([]);
+  
+  useEffect(() => {
+    let cancelled = false;
+    const compute = async () => {
+      const data = await recalculateValues(currentMonthData, currentPeriod);
+      if (!cancelled) setRecalculatedData(data);
+    };
+    compute();
+    return () => { cancelled = true; };
+  }, [currentMonthData, currentPeriod, recalculateValues]);
+
   // Filtered current month with async value recalculation
   const [calculatedData, setCalculatedData] = useState<CurrentMonthRow[]>([]);
   
@@ -167,7 +180,7 @@ const UtilitiesServices = () => {
     const compute = async () => {
       let data = currentMonthData;
       if (calculationType === 'value') {
-        data = await recalculateValues(data, currentPeriod);
+        data = recalculatedData;
       }
       if (currentUtilityFilter !== 'all') {
         data = data.filter(d => d.utilityType === currentUtilityFilter);
@@ -176,7 +189,7 @@ const UtilitiesServices = () => {
     };
     compute();
     return () => { cancelled = true; };
-  }, [currentMonthData, currentUtilityFilter, calculationType, currentPeriod, recalculateValues]);
+  }, [currentMonthData, currentUtilityFilter, calculationType, currentPeriod, recalculatedData]);
 
   const filteredCurrentMonthData = calculatedData;
 
@@ -829,7 +842,7 @@ const UtilitiesServices = () => {
                             totalValue: scData.reduce((s, r) => s + r.total, 0),
                           };
                         }
-                        const rows = currentMonthData.filter(r => r.utilityType === u.id);
+                        const rows = recalculatedData.filter(r => r.utilityType === u.id);
                         return { id: u.id, name: u.fullName, unit: u.id === 'GN' ? 'kWh' : u.unit,
                           consumption: rows.reduce((s, r) => s + r.consumption, 0),
                           netValue: rows.reduce((s, r) => s + r.netValue, 0),
