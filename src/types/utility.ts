@@ -120,11 +120,11 @@ export const UTILITIES: UtilityInfo[] = [
   { id: 'EE', name: 'EE', fullName: 'Energie Electrică', unit: 'kWh', color: 'chart-ee', hasMeter: true },
   { id: 'GN', name: 'GN', fullName: 'Gaze Naturale', unit: 'Nmc', color: 'chart-gn', hasMeter: true },
   { id: 'AC', name: 'AC', fullName: 'Apă și Canalizare', unit: 'mc', color: 'chart-ac', hasMeter: true },
-  { id: 'AA', name: 'AA', fullName: 'Analize Ape Uzate', unit: 'mc', color: 'chart-aa', hasMeter: false },
+  { id: 'AA', name: 'AA', fullName: 'Analize Ape Uzate', unit: 'buc', color: 'chart-aa', hasMeter: false },
   { id: 'AS', name: 'AS', fullName: 'Apă din Subteran', unit: 'mc', color: 'chart-as', hasMeter: false },
-  { id: 'SM', name: 'SM', fullName: 'Serviciul Mentenanță', unit: 'lei', color: 'chart-sm', hasMeter: false },
-  { id: 'SSV', name: 'SSV', fullName: 'Serviciul Supraveghere Video', unit: 'lei', color: 'chart-sm', hasMeter: false },
-  { id: 'SC', name: 'SC', fullName: 'Serviciul de Curățenie', unit: 'lei', color: 'chart-sc', hasMeter: false },
+  { id: 'SM', name: 'SM', fullName: 'Serviciul Mentenanță', unit: 'buc', color: 'chart-sm', hasMeter: false },
+  { id: 'SSV', name: 'SSV', fullName: 'Serviciul Supraveghere Video', unit: 'buc', color: 'chart-sm', hasMeter: false },
+  { id: 'SC', name: 'SC', fullName: 'Serviciul de Curățenie', unit: 'mp', color: 'chart-sc', hasMeter: false },
 ];
 
 export const getUtilityInfo = (type: UtilityType): UtilityInfo => {
