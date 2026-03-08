@@ -3,76 +3,105 @@ import StatCard from '@/components/dashboard/StatCard';
 import UtilityChart from '@/components/dashboard/UtilityChart';
 import UtilityBreakdown from '@/components/dashboard/UtilityBreakdown';
 import ClientsTable from '@/components/dashboard/ClientsTable';
-
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
-import { monthlyStats, clients, spaces, supplierInvoices } from '@/data/mockData';
-import { Zap, Droplets, Flame, Users, Building2, FileText } from 'lucide-react';
+import { useDashboardData } from '@/hooks/use-dashboard-data';
+import { Zap, Droplets, Flame, Users, Building2, FileText, CalendarDays } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Dashboard = () => {
-  const currentStats = monthlyStats[0];
-  const previousStats = monthlyStats[1];
-  
-  const totalValue = currentStats.totalValue;
-  const previousTotal = previousStats.totalValue;
-  const valueChange = ((totalValue - previousTotal) / previousTotal) * 100;
-  
-  const eeStats = currentStats.byUtility.find(u => u.utilityType === 'EE');
-  const acStats = currentStats.byUtility.find(u => u.utilityType === 'AC');
-  const gnStats = currentStats.byUtility.find(u => u.utilityType === 'GN');
+  const { ready, periods, selectedPeriod, setSelectedPeriod, periodData, chartData } = useDashboardData();
 
-  const activeClients = clients.filter(c => 
-    spaces.some(s => s.clientId === c.id)
-  ).length;
+  if (!ready || !periodData) {
+    return (
+      <MainLayout title="Dashboard" subtitle="Se încarcă...">
+        <div className="flex items-center justify-center h-64 text-muted-foreground">Se încarcă datele...</div>
+      </MainLayout>
+    );
+  }
 
-  const occupiedSpaces = spaces.filter(s => s.clientId !== null).length;
+  const formatPeriodLabel = (p: string) => {
+    const [y, m] = p.split('-').map(Number);
+    const date = new Date(y, m - 1);
+    const name = date.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
+  // Find previous period data for trend
+  const currentIdx = periods.indexOf(selectedPeriod);
+  const previousPeriod = currentIdx < periods.length - 1 ? periods[currentIdx + 1] : null;
+  const previousTotal = previousPeriod
+    ? Object.values(chartData[previousPeriod] || {}).reduce((s, v) => s + v, 0)
+    : null;
+  const valueChange = previousTotal && previousTotal > 0
+    ? ((periodData.totalValue - previousTotal) / previousTotal) * 100
+    : null;
+
+  const eeStats = periodData.byUtility.find(u => u.utilityType === 'EE');
+  const acStats = periodData.byUtility.find(u => u.utilityType === 'AC');
+  const gnStats = periodData.byUtility.find(u => u.utilityType === 'GN');
 
   return (
-    <MainLayout 
-      title="Dashboard" 
-      subtitle="Gestiune Utilități și Servicii - Decembrie 2025"
+    <MainLayout
+      title="Dashboard"
+      subtitle={`Gestiune Utilități și Servicii - ${formatPeriodLabel(selectedPeriod)}`}
     >
       <div className="space-y-6 animate-slide-up">
+        {/* Period Selector */}
+        <div className="flex items-center gap-3">
+          <CalendarDays className="w-5 h-5 text-muted-foreground" />
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className="w-[220px]">
+              <SelectValue placeholder="Selectează perioada" />
+            </SelectTrigger>
+            <SelectContent>
+              {periods.map(p => (
+                <SelectItem key={p} value={p}>
+                  {formatPeriodLabel(p)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
           <StatCard
             title="Total Utilități Luna"
-            value={`${totalValue.toLocaleString('ro-RO')} lei`}
-            trend={{ value: valueChange, label: 'vs. luna trecută' }}
+            value={`${periodData.totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei`}
+            trend={valueChange !== null ? { value: Math.round(valueChange * 100) / 100, label: 'vs. luna trecută' } : undefined}
             icon={<FileText className="w-5 h-5" />}
             iconBgClass="bg-primary/10 text-primary"
           />
           <StatCard
             title="Energie Electrică"
-            value={`${eeStats?.consumption.toLocaleString('ro-RO')} kWh`}
-            subtitle={`${eeStats?.value.toLocaleString('ro-RO')} lei`}
+            value={`${(eeStats?.consumption || 0).toLocaleString('ro-RO')} kWh`}
+            subtitle={`${(eeStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
             icon={<Zap className="w-5 h-5" />}
             iconBgClass="bg-chart-ee/10 text-chart-ee"
           />
           <StatCard
             title="Apă și Canalizare"
-            value={`${acStats?.consumption.toLocaleString('ro-RO')} mc`}
-            subtitle={`${acStats?.value.toLocaleString('ro-RO')} lei`}
+            value={`${(acStats?.consumption || 0).toLocaleString('ro-RO')} mc`}
+            subtitle={`${(acStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
             icon={<Droplets className="w-5 h-5" />}
             iconBgClass="bg-chart-ac/10 text-chart-ac"
           />
           <StatCard
             title="Gaze Naturale"
-            value={`${gnStats?.consumption.toLocaleString('ro-RO')} Nmc`}
-            subtitle={`${gnStats?.value.toLocaleString('ro-RO')} lei`}
+            value={`${(gnStats?.consumption || 0).toLocaleString('ro-RO')} Nmc`}
+            subtitle={`${(gnStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
             icon={<Flame className="w-5 h-5" />}
             iconBgClass="bg-chart-gn/10 text-chart-gn"
           />
           <StatCard
             title="Clienți Activi"
-            value={activeClients}
-            subtitle={`din ${clients.length} total`}
+            value={periodData.activeClients}
             icon={<Users className="w-5 h-5" />}
             iconBgClass="bg-success/10 text-success"
           />
           <StatCard
             title="Spații Ocupate"
-            value={occupiedSpaces}
-            subtitle={`din ${spaces.length} total`}
+            value={periodData.occupiedSpaces}
             icon={<Building2 className="w-5 h-5" />}
             iconBgClass="bg-accent/10 text-accent"
           />
@@ -81,18 +110,18 @@ const Dashboard = () => {
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <UtilityChart />
+            <UtilityChart chartData={chartData} selectedPeriod={selectedPeriod} />
           </div>
-          <UtilityBreakdown />
+          <UtilityBreakdown data={periodData.byUtility} />
         </div>
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <ClientsTable />
+            <ClientsTable data={periodData.byClient} periodLabel={formatPeriodLabel(selectedPeriod)} />
           </div>
           <div className="space-y-6">
-            <RecentInvoices />
+            <RecentInvoices period={selectedPeriod} />
           </div>
         </div>
       </div>
