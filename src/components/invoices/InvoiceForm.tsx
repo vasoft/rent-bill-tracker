@@ -690,9 +690,6 @@ const InvoiceForm = ({
                             disabled={mode === 'view'}
                           />
                         </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          Cotă TVA {vatRate}%
-                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
