@@ -894,9 +894,9 @@ const UtilitiesServices = () => {
                           <TableRow className="font-semibold bg-muted/50">
                             <TableCell className="text-right">TOTAL</TableCell>
                             <TableCell className="text-right" />
-                            <TableCell className="text-right font-mono">{fmt(grandTotal.netValue)} lei</TableCell>
-                            <TableCell className="text-right font-mono">{fmt(grandTotal.vatValue)} lei</TableCell>
-                            <TableCell className="text-right font-mono">{fmt(grandTotal.totalValue)} lei</TableCell>
+                            <TableCell className="text-right font-mono">{grandTotal.netValue > 0 ? `${fmt(grandTotal.netValue)} lei` : <span className="text-muted-foreground">0,00 lei</span>}</TableCell>
+                            <TableCell className="text-right font-mono">{grandTotal.vatValue > 0 ? `${fmt(grandTotal.vatValue)} lei` : <span className="text-muted-foreground">0,00 lei</span>}</TableCell>
+                            <TableCell className="text-right font-mono">{grandTotal.totalValue > 0 ? `${fmt(grandTotal.totalValue)} lei` : <span className="text-muted-foreground">0,00 lei</span>}</TableCell>
                           </TableRow>
                         </>
                       );
