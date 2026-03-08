@@ -167,8 +167,8 @@ const UtilitiesServices = () => {
   }, [filteredCurrentMonthData, editDialogOpen, editingRow, editIndexNew]);
 
   const currentStats = useMemo(() => {
-    // Only count rows where indexNew has been recorded (> 0)
-    const recordedRows = liveCurrentMonthData.filter(r => r.indexNew > 0);
+    // Only count rows where data has been recorded
+    const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
   }, [liveCurrentMonthData]);
 
@@ -683,11 +683,13 @@ const UtilitiesServices = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Index Dialog */}
+        {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Introducere Index Nou</DialogTitle>
+              <DialogTitle>
+                {editingRow?.hasMeter ? 'Introducere Index Nou' : 'Introducere Consum Serviciu'}
+              </DialogTitle>
             </DialogHeader>
             {editingRow && (
               <div className="space-y-4 py-4">
@@ -703,61 +705,94 @@ const UtilitiesServices = () => {
                     </Badge>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Index Vechi (din istoric)</Label>
-                  <Input
-                    type="number"
-                    value={editingRow.indexOld}
-                    onChange={(e) => setEditingRow({ ...editingRow, indexOld: parseFloat(e.target.value) || 0 })}
-                  />
-                  <p className="text-xs text-muted-foreground">Preluat automat din ultimul index înregistrat</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Index Nou *</Label>
-                  <Input
-                    type="number"
-                    value={editIndexNew}
-                    onChange={(e) => setEditIndexNew(e.target.value)}
-                    placeholder="Introduceți indexul nou"
-                    autoFocus
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{getConstantLabel(editingRow.utilityType)}</Label>
-                  <Input
-                    type="number"
-                    value={editingRow.constant}
-                    onChange={(e) => setEditingRow({ ...editingRow, constant: parseFloat(e.target.value) || 1 })}
-                    step="0.001"
-                  />
-                </div>
-                <div className="p-3 bg-muted rounded-lg space-y-1">
-                  <p className="text-sm text-muted-foreground">Consum calculat:</p>
-                  {editingRow.utilityType === 'GN' ? (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        Diferență indexe: <span className="font-semibold text-foreground">
-                          {Math.max(0, (parseFloat(editIndexNew) || 0) - editingRow.indexOld).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} Nmc
-                        </span>
+
+                {editingRow.hasMeter ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Index Vechi (din istoric)</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.indexOld}
+                        onChange={(e) => setEditingRow({ ...editingRow, indexOld: parseFloat(e.target.value) || 0 })}
+                      />
+                      <p className="text-xs text-muted-foreground">Preluat automat din ultimul index înregistrat</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Index Nou *</Label>
+                      <Input
+                        type="number"
+                        value={editIndexNew}
+                        onChange={(e) => setEditIndexNew(e.target.value)}
+                        placeholder="Introduceți indexul nou"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{getConstantLabel(editingRow.utilityType)}</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.constant}
+                        onChange={(e) => setEditingRow({ ...editingRow, constant: parseFloat(e.target.value) || 1 })}
+                        step="0.001"
+                      />
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg space-y-1">
+                      <p className="text-sm text-muted-foreground">Consum calculat:</p>
+                      {editingRow.utilityType === 'GN' ? (
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            Diferență indexe: <span className="font-semibold text-foreground">
+                              {Math.max(0, (parseFloat(editIndexNew) || 0) - editingRow.indexOld).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} Nmc
+                            </span>
+                          </p>
+                          <p className="text-xl font-bold">
+                            {calculateConsumption(editingRow.utilityType, editingRow.indexOld, parseFloat(editIndexNew) || 0, editingRow.constant).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} kWh
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xl font-bold">
+                          {calculateConsumption(editingRow.utilityType, editingRow.indexOld, parseFloat(editIndexNew) || 0, editingRow.constant).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Identificator Specific (Isp) — {getIspLabel(editingRow.utilityType)}</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.isp}
+                        onChange={(e) => setEditingRow({ ...editingRow, isp: parseFloat(e.target.value) || 0 })}
+                        step="0.01"
+                        autoFocus
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {editingRow.utilityType === 'SM' || editingRow.utilityType === 'SSV'
+                          ? 'Suprafața spațiului (mp)'
+                          : 'Numărul de persoane sau unități'}
                       </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Consum Specific (Csp) — tarif/unitate</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.csp || ''}
+                        onChange={(e) => setEditingRow({ ...editingRow, csp: parseFloat(e.target.value) || 0 })}
+                        step="0.01"
+                        placeholder="Introduceți tariful per unitate"
+                      />
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg space-y-1">
+                      <p className="text-sm text-muted-foreground">Consum calculat (Isp × Csp):</p>
                       <p className="text-xl font-bold">
-                        {calculateConsumption(
-                          editingRow.utilityType,
-                          editingRow.indexOld,
-                          parseFloat(editIndexNew) || 0,
-                          editingRow.constant
-                        ).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} kWh
+                        {((editingRow.isp || 0) * (editingRow.csp || 0)).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
                       </p>
-                    </>
-                  ) : (
-                    <p className="text-xl font-bold">
-                      {calculateConsumption(
-                        editingRow.utilityType,
-                        editingRow.indexOld,
-                        parseFloat(editIndexNew) || 0,
-                        editingRow.constant
-                      ).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
-                    </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
                   )}
                 </div>
               </div>
