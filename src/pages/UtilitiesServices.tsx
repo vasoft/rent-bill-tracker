@@ -545,9 +545,9 @@ const UtilitiesServices = () => {
                       <TableHead>Spațiu</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Utilitate/Serviciu</TableHead>
-                      <TableHead className="text-right">Index Vechi</TableHead>
-                      <TableHead className="text-right">Index Nou</TableHead>
-                      <TableHead className="text-right">Const/Pcs/Csp</TableHead>
+                      <TableHead className="text-right">Index Vechi / Isp</TableHead>
+                      <TableHead className="text-right">Index Nou / Csp</TableHead>
+                      <TableHead className="text-right">Const/Pcs/Cotă</TableHead>
                       <TableHead className="text-right">Consum</TableHead>
                       <TableHead className="w-[60px]">Acțiuni</TableHead>
                     </TableRow>
@@ -556,7 +556,7 @@ const UtilitiesServices = () => {
                     {!isInitialized ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                          Apăsați "Inițializare Consum" pentru a începe înregistrarea indexelor
+                          Apăsați "Inițializare Consum" pentru a începe înregistrarea
                         </TableCell>
                       </TableRow>
                     ) : filteredCurrentMonthData.length === 0 ? (
@@ -576,16 +576,32 @@ const UtilitiesServices = () => {
                               {getUtilityDisplayName(item.utilityType)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {item.indexOld > 0 ? item.indexOld.toLocaleString('ro-RO') : '-'}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-semibold">
-                            {item.indexNew > 0 ? item.indexNew.toLocaleString('ro-RO') : '-'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="text-xs text-muted-foreground mr-1">{getConstantLabel(item.utilityType)}:</span>
-                            {item.constant.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
-                          </TableCell>
+                          {item.hasMeter ? (
+                            <>
+                              <TableCell className="text-right font-mono">
+                                {item.indexOld > 0 ? item.indexOld.toLocaleString('ro-RO') : '-'}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold">
+                                {item.indexNew > 0 ? item.indexNew.toLocaleString('ro-RO') : '-'}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-xs text-muted-foreground mr-1">{getConstantLabel(item.utilityType)}:</span>
+                                {item.constant.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell className="text-right font-mono">
+                                <span className="text-xs text-muted-foreground mr-1">{getIspLabel(item.utilityType)}:</span>
+                                {item.isp > 0 ? item.isp.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) : '-'}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold">
+                                <span className="text-xs text-muted-foreground mr-1">Csp:</span>
+                                {item.csp > 0 ? item.csp.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) : '-'}
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                            </>
+                          )}
                           <TableCell className="text-right font-semibold">
                             {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.utilityType === 'GN' ? 'kWh' : item.unit}
                           </TableCell>
