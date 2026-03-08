@@ -340,6 +340,27 @@ const Invoices = () => {
           onAddSupplier={handleAddSupplier}
           onAddUtility={handleAddUtility}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Șterge factura?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Ești sigur că vrei să ștergi factura <strong>{deleteTarget?.invoiceNumber}</strong>? Această acțiune nu poate fi anulată.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anulează</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deleteTarget && handleDeleteInvoice(deleteTarget)}
+              >
+                Șterge
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );
