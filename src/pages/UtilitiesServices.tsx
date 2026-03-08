@@ -635,7 +635,7 @@ const UtilitiesServices = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && currentUtilityFilter !== 'SM' && currentUtilityFilter !== 'SSV' && currentUtilityFilter !== 'SC' && (
+                {currentUtilityFilter !== 'all' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && currentUtilityFilter !== 'SM' && currentUtilityFilter !== 'SSV' && currentUtilityFilter !== 'SC' && (
                 <Select value={calculationType} onValueChange={(v) => setCalculationType(v as 'consumption' | 'value')}>
                   <SelectTrigger className="w-[150px]">
                     <Calculator className="w-4 h-4 mr-2" />
@@ -759,6 +759,137 @@ const UtilitiesServices = () => {
                   isInitialized={isInitialized}
                   onEditIndex={handleEditIndex}
                 />
+              ) : currentUtilityFilter === 'all' ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead>Utilitate/Serviciu</TableHead>
+                      <TableHead className="text-right">Consum</TableHead>
+                      <TableHead className="text-right">Valoare Netă</TableHead>
+                      <TableHead className="text-right">TVA</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!isInitialized ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                          Apăsați "Inițializare Consum" pentru a începe înregistrarea
+                        </TableCell>
+                      </TableRow>
+                    ) : (() => {
+                      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+                      
+                      const summaryRows = UTILITIES.map(u => {
+                        if (u.id === 'AC') {
+                          return { id: u.id, name: u.fullName, unit: u.unit,
+                            consumption: acSpaceData.reduce((s, r) => s + r.consumTotal, 0),
+                            netValue: acValueData.reduce((s, r) => s + r.valoareNeta, 0),
+                            vatValue: acValueData.reduce((s, r) => s + r.valoareTva, 0),
+                            totalValue: acValueData.reduce((s, r) => s + r.valoareTotala, 0),
+                          };
+                        }
+                        if (u.id === 'AA') {
+                          return { id: u.id, name: u.fullName, unit: u.unit,
+                            consumption: aaData.reduce((s, r) => s + r.cantitateAlocata, 0),
+                            netValue: aaData.reduce((s, r) => s + r.valoareNeta, 0),
+                            vatValue: aaData.reduce((s, r) => s + r.valoareTva, 0),
+                            totalValue: aaData.reduce((s, r) => s + r.total, 0),
+                          };
+                        }
+                        if (u.id === 'AS') {
+                          return { id: u.id, name: u.fullName, unit: u.unit,
+                            consumption: asData.reduce((s, r) => s + r.cantitateAlocata, 0),
+                            netValue: asData.reduce((s, r) => s + r.valoareNeta, 0),
+                            vatValue: asData.reduce((s, r) => s + r.valoareTva, 0),
+                            totalValue: asData.reduce((s, r) => s + r.total, 0),
+                          };
+                        }
+                        if (u.id === 'SM') {
+                          return { id: u.id, name: u.fullName, unit: u.unit,
+                            consumption: smData.reduce((s, r) => s + r.cantitateAlocata, 0),
+                            netValue: smData.reduce((s, r) => s + r.valoareNeta, 0),
+                            vatValue: smData.reduce((s, r) => s + r.valoareTva, 0),
+                            totalValue: smData.reduce((s, r) => s + r.total, 0),
+                          };
+                        }
+                        if (u.id === 'SSV') {
+                          return { id: u.id, name: u.fullName, unit: u.unit,
+                            consumption: ssvData.reduce((s, r) => s + r.cantitateAlocata, 0),
+                            netValue: ssvData.reduce((s, r) => s + r.valoareNeta, 0),
+                            vatValue: ssvData.reduce((s, r) => s + r.valoareTva, 0),
+                            totalValue: ssvData.reduce((s, r) => s + r.total, 0),
+                          };
+                        }
+                        if (u.id === 'SC') {
+                          return { id: u.id, name: u.fullName, unit: u.unit,
+                            consumption: scData.reduce((s, r) => s + r.cantitateAlocata, 0),
+                            netValue: scData.reduce((s, r) => s + r.valoareNeta, 0),
+                            vatValue: scData.reduce((s, r) => s + r.valoareTva, 0),
+                            totalValue: scData.reduce((s, r) => s + r.total, 0),
+                          };
+                        }
+                        const rows = currentMonthData.filter(r => r.utilityType === u.id);
+                        return { id: u.id, name: u.fullName, unit: u.id === 'GN' ? 'kWh' : u.unit,
+                          consumption: rows.reduce((s, r) => s + r.consumption, 0),
+                          netValue: rows.reduce((s, r) => s + r.netValue, 0),
+                          vatValue: rows.reduce((s, r) => s + r.vatValue, 0),
+                          totalValue: rows.reduce((s, r) => s + r.totalValue, 0),
+                        };
+                      }).filter(r => r.consumption > 0 || r.totalValue > 0);
+
+                      if (summaryRows.length === 0) {
+                        return (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                              Nu există date pentru perioada selectată
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+
+                      const grandTotal = {
+                        netValue: summaryRows.reduce((s, r) => s + r.netValue, 0),
+                        vatValue: summaryRows.reduce((s, r) => s + r.vatValue, 0),
+                        totalValue: summaryRows.reduce((s, r) => s + r.totalValue, 0),
+                      };
+
+                      return (
+                        <>
+                          {summaryRows.map(row => (
+                            <TableRow key={row.id} className="hover:bg-muted/50">
+                              <TableCell>
+                                <Badge variant="outline" className={`gap-1.5 ${getUtilityColor(row.id as UtilityType)}`}>
+                                  {getUtilityIcon(row.id as UtilityType)}
+                                  {row.name}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-mono">
+                                {fmt(row.consumption)} {row.unit}
+                              </TableCell>
+                              <TableCell className="text-right font-mono">
+                                {row.netValue > 0 ? `${fmt(row.netValue)} lei` : <span className="text-muted-foreground">0,00 lei</span>}
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-muted-foreground">
+                                {row.vatValue > 0 ? `${fmt(row.vatValue)} lei` : '0,00 lei'}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold font-mono">
+                                {row.totalValue > 0 ? `${fmt(row.totalValue)} lei` : <span className="text-muted-foreground">0,00 lei</span>}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          <TableRow className="font-semibold bg-muted/50">
+                            <TableCell className="text-right">TOTAL</TableCell>
+                            <TableCell className="text-right" />
+                            <TableCell className="text-right font-mono">{fmt(grandTotal.netValue)} lei</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(grandTotal.vatValue)} lei</TableCell>
+                            <TableCell className="text-right font-mono">{fmt(grandTotal.totalValue)} lei</TableCell>
+                          </TableRow>
+                        </>
+                      );
+                    })()}
+                  </TableBody>
+                </Table>
               ) : calculationType === 'consumption' ? (
                 <Table>
                   <TableHeader>
