@@ -12,6 +12,7 @@ export interface SummaryStatsData {
 interface SummaryStatsProps {
   data: SummaryStatsData;
   compact?: boolean;
+  hideConsumption?: boolean;
 }
 
 const stats = [
@@ -23,11 +24,13 @@ const stats = [
   { key: 'totalValue' as const, label: 'Total', icon: Coins, format: (v: string | number) => `${v} lei` },
 ];
 
-const SummaryStats = ({ data, compact = false }: SummaryStatsProps) => {
+const SummaryStats = ({ data, compact = false, hideConsumption = false }: SummaryStatsProps) => {
+  const filteredStats = hideConsumption ? stats.filter(s => s.key !== 'totalConsumption') : stats;
+  
   if (compact) {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {stats.map(({ key, label, icon: Icon, format }) => (
+        {filteredStats.map(({ key, label, icon: Icon, format }) => (
           <div key={key} className="flex items-center gap-2 p-2 rounded-lg bg-muted/50">
             <Icon className="w-4 h-4 text-muted-foreground shrink-0" />
             <div className="min-w-0">
@@ -40,9 +43,11 @@ const SummaryStats = ({ data, compact = false }: SummaryStatsProps) => {
     );
   }
 
+  const gridCols = hideConsumption ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-6';
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      {stats.map(({ key, label, icon: Icon, format }) => (
+    <div className={`grid ${gridCols} gap-3`}>
+      {filteredStats.map(({ key, label, icon: Icon, format }) => (
         <div key={key} className="flex items-center gap-3 p-3 rounded-lg border bg-card">
           <div className="p-2 rounded-md bg-primary/10">
             <Icon className="w-4 h-4 text-primary" />
