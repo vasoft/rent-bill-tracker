@@ -74,9 +74,10 @@ export default {
           ac: "hsl(var(--chart-ac))",
           aa: "hsl(var(--chart-aa))",
           sm: "hsl(var(--chart-sm))",
-           as: "hsl(var(--chart-as))",
-           sc: "hsl(var(--chart-sc))",
-         },
+          as: "hsl(var(--chart-as))",
+          ssv: "hsl(var(--chart-ssv))",
+          sc: "hsl(var(--chart-sc))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -123,7 +123,7 @@ export const UTILITIES: UtilityInfo[] = [
   { id: 'AA', name: 'AA', fullName: 'Analize Ape Uzate', unit: 'buc', color: 'chart-aa', hasMeter: false },
   { id: 'AS', name: 'AS', fullName: 'Apă din Subteran', unit: 'mc', color: 'chart-as', hasMeter: false },
   { id: 'SM', name: 'SM', fullName: 'Serviciul Mentenanță', unit: 'buc', color: 'chart-sm', hasMeter: false },
-  { id: 'SSV', name: 'SSV', fullName: 'Serviciul Supraveghere Video', unit: 'buc', color: 'chart-sm', hasMeter: false },
+  { id: 'SSV', name: 'SSV', fullName: 'Serviciul Supraveghere Video', unit: 'buc', color: 'chart-ssv', hasMeter: false },
   { id: 'SC', name: 'SC', fullName: 'Serviciul de Curățenie', unit: 'mp', color: 'chart-sc', hasMeter: false },
 ];
 

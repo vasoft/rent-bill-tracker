@@ -5,7 +5,7 @@ import UtilityBreakdown from '@/components/dashboard/UtilityBreakdown';
 import ClientsTable from '@/components/dashboard/ClientsTable';
 import RecentInvoices from '@/components/dashboard/RecentInvoices';
 import { useDashboardData } from '@/hooks/use-dashboard-data';
-import { Zap, Droplets, Flame, Users, Building2, FileText, CalendarDays } from 'lucide-react';
+import { Zap, Droplets, Flame, Users, Building2, FileText, CalendarDays, Beaker, Waves, Wrench, Video, Sparkles } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Dashboard = () => {
@@ -36,9 +36,15 @@ const Dashboard = () => {
     ? ((periodData.totalValue - previousTotal) / previousTotal) * 100
     : null;
 
-  const eeStats = periodData.byUtility.find(u => u.utilityType === 'EE');
-  const acStats = periodData.byUtility.find(u => u.utilityType === 'AC');
-  const gnStats = periodData.byUtility.find(u => u.utilityType === 'GN');
+  const getStats = (type: string) => periodData.byUtility.find(u => u.utilityType === type);
+  const eeStats = getStats('EE');
+  const acStats = getStats('AC');
+  const gnStats = getStats('GN');
+  const aaStats = getStats('AA');
+  const asStats = getStats('AS');
+  const smStats = getStats('SM');
+  const ssvStats = getStats('SSV');
+  const scStats = getStats('SC');
 
   return (
     <MainLayout
@@ -63,8 +69,8 @@ const Dashboard = () => {
           </Select>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+        {/* Stats Grid - Row 1: Total + Metered Utilities */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
             title="Total Utilități Luna"
             value={`${periodData.totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei`}
@@ -92,6 +98,42 @@ const Dashboard = () => {
             subtitle={`${(gnStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
             icon={<Flame className="w-5 h-5" />}
             iconBgClass="bg-chart-gn/10 text-chart-gn"
+          />
+        </div>
+
+        {/* Stats Grid - Row 2: Services + Occupancy */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          <StatCard
+            title="Analize Ape Uzate"
+            value={`${(aaStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
+            subtitle={aaStats?.consumption ? `${aaStats.consumption.toLocaleString('ro-RO')} buc` : undefined}
+            icon={<Beaker className="w-5 h-5" />}
+            iconBgClass="bg-chart-aa/10 text-chart-aa"
+          />
+          <StatCard
+            title="Apă din Subteran"
+            value={`${(asStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
+            subtitle={asStats?.consumption ? `${asStats.consumption.toLocaleString('ro-RO')} mc` : undefined}
+            icon={<Waves className="w-5 h-5" />}
+            iconBgClass="bg-chart-as/10 text-chart-as"
+          />
+          <StatCard
+            title="Mentenanță"
+            value={`${(smStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
+            icon={<Wrench className="w-5 h-5" />}
+            iconBgClass="bg-chart-sm/10 text-chart-sm"
+          />
+          <StatCard
+            title="Supraveghere Video"
+            value={`${(ssvStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
+            icon={<Video className="w-5 h-5" />}
+            iconBgClass="bg-chart-ssv/10 text-chart-ssv"
+          />
+          <StatCard
+            title="Curățenie"
+            value={`${(scStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
+            icon={<Sparkles className="w-5 h-5" />}
+            iconBgClass="bg-chart-sc/10 text-chart-sc"
           />
           <StatCard
             title="Clienți Activi"
