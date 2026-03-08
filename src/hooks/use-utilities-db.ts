@@ -375,6 +375,24 @@ export function useUtilitiesDb() {
     }
   }, []);
 
+  const deleteArchivedPeriod = useCallback(async (period: string): Promise<boolean> => {
+    try {
+      // Delete distributions for this period
+      await db.distributions.where('period').equals(period).delete();
+      // Delete meter readings for this period
+      await db.meterReadings.where('period').equals(period).delete();
+      // Delete confirmed utilities for this period
+      await db.confirmedUtilities.where('period').equals(period).delete();
+      // Update historical periods
+      setHistoricalPeriods(prev => prev.filter(p => p !== period));
+      toast.success(`Arhiva pentru ${period} a fost ștearsă! Puteți reinițializa această perioadă în Luna de Consum.`);
+      return true;
+    } catch (e) {
+      toast.error('Eroare la ștergerea arhivei!');
+      return false;
+    }
+  }, []);
+
   return {
     ready,
     historicalPeriods,
@@ -389,6 +407,7 @@ export function useUtilitiesDb() {
     recalculateValues,
     closePeriod,
     loadPeriodData,
+    deleteArchivedPeriod,
   };
 }
 

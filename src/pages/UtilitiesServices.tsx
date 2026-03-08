@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { History, Calendar, Zap, Flame, Droplets, Calculator, Play, Pencil, Lock } from 'lucide-react';
+import { History, Calendar, Zap, Flame, Droplets, Calculator, Play, Pencil, Lock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import SummaryStats, { type SummaryStatsData } from '@/components/utilities/SummaryStats';
 
@@ -43,6 +43,7 @@ const UtilitiesServices = () => {
     recalculateValues,
     closePeriod,
     loadPeriodData,
+    deleteArchivedPeriod,
   } = useUtilitiesDb();
 
   // AC distribution hook
@@ -89,6 +90,7 @@ const UtilitiesServices = () => {
 
   // Close period confirmation dialog
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [deleteArchiveConfirmOpen, setDeleteArchiveConfirmOpen] = useState(false);
 
   // Generate available consumption periods (exclude already closed/archived periods)
   const availableConsumptionPeriods = useMemo(() => {
@@ -743,6 +745,17 @@ const UtilitiesServices = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {historyPeriodFilter && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setDeleteArchiveConfirmOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Șterge Arhiva {formatPeriod(historyPeriodFilter)}
+                </Button>
+              )}
             </div>
 
             {historyData.length > 0 && <SummaryStats data={historyStats} />}
@@ -1416,6 +1429,40 @@ const UtilitiesServices = () => {
               <Button variant="destructive" onClick={handleClosePeriod}>
                 <Lock className="w-4 h-4 mr-2" />
                 Închide Luna de Consum
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Archive Confirmation Dialog */}
+        <Dialog open={deleteArchiveConfirmOpen} onOpenChange={setDeleteArchiveConfirmOpen}>
+          <DialogContent className="sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle>Ștergere Arhivă</DialogTitle>
+              <DialogDescription>
+                Sunteți sigur că doriți să ștergeți arhiva pentru <strong>{formatPeriod(historyPeriodFilter)}</strong>? 
+                Toate distribuțiile și citirile de contor pentru această perioadă vor fi șterse definitiv. 
+                Perioada va deveni disponibilă pentru reinițializare în Luna de Consum.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteArchiveConfirmOpen(false)}>Anulează</Button>
+              <Button variant="destructive" onClick={async () => {
+                const success = await deleteArchivedPeriod(historyPeriodFilter);
+                if (success) {
+                  setDeleteArchiveConfirmOpen(false);
+                  setHistoryData([]);
+                  // Select next available period
+                  const remaining = historicalPeriods.filter(p => p !== historyPeriodFilter);
+                  if (remaining.length > 0) {
+                    setHistoryPeriodFilter(remaining[0]);
+                  } else {
+                    setHistoryPeriodFilter('');
+                  }
+                }
+              }}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Șterge Definitiv
               </Button>
             </DialogFooter>
           </DialogContent>
