@@ -145,12 +145,15 @@ const UtilitiesServices = () => {
   };
 
   const historyStats = useMemo(() => computeStats(historyData), [historyData]);
-  // Set default history period once loaded
+  // Set default history period once loaded, and auto-select newest when a new period is added
   useEffect(() => {
-    if (historicalPeriods.length > 0 && !historyPeriodFilter) {
-      setHistoryPeriodFilter(historicalPeriods[0]);
+    if (historicalPeriods.length > 0) {
+      const newest = historicalPeriods[0];
+      if (!historyPeriodFilter || !historicalPeriods.includes(historyPeriodFilter) || newest > historyPeriodFilter) {
+        setHistoryPeriodFilter(newest);
+      }
     }
-  }, [historicalPeriods, historyPeriodFilter]);
+  }, [historicalPeriods]);
 
   // Load history data when filters change
   useEffect(() => {
