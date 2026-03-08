@@ -140,7 +140,11 @@ const UtilitiesServices = () => {
 
   const filteredCurrentMonthData = calculatedData;
 
-  const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number): number => {
+  const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number, isp?: number, csp?: number): number => {
+    const utility = UTILITIES.find(u => u.id === utilityType);
+    if (utility && !utility.hasMeter) {
+      return (isp || 0) * (csp || 0);
+    }
     const diff = Math.max(0, indexNew - indexOld);
     switch (utilityType) {
       case 'EE': return diff * constant;
