@@ -108,7 +108,7 @@ export default function SsvTable({ ssvData, isInitialized, isConfirmed, onDataCh
                   {fmt(row.consumReferinta)} mp
                 </TableCell>
                 <TableCell className="text-right font-mono font-semibold">
-                  {fmt(row.cantitateAlocata)} lei
+                  {fmt(row.cantitateAlocata)} buc
                 </TableCell>
                 <TableCell className="text-right">
                   {row.valoareNeta > 0
@@ -149,7 +149,7 @@ export default function SsvTable({ ssvData, isInitialized, isConfirmed, onDataCh
             <TableRow className="font-semibold">
               <TableCell colSpan={3}>Total</TableCell>
               <TableCell className="text-right font-mono">{fmt(totals.consumReferinta)} mp</TableCell>
-              <TableCell className="text-right font-mono">{fmt(totals.cantitateAlocata)} lei</TableCell>
+              <TableCell className="text-right font-mono">{fmt(totals.cantitateAlocata)} buc</TableCell>
               <TableCell className="text-right">{fmt(totals.valoareNeta)} lei</TableCell>
               <TableCell className="text-right">{fmt(totals.valoareTva)} lei</TableCell>
               <TableCell className="text-right">{fmt(totals.total)} lei</TableCell>
@@ -185,7 +185,7 @@ export default function SsvTable({ ssvData, isInitialized, isConfirmed, onDataCh
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Cantitate alocată</p>
-                  <p className="font-mono font-semibold">{fmt(viewRow.cantitateAlocata)} lei</p>
+                  <p className="font-mono font-semibold">{fmt(viewRow.cantitateAlocata)} buc</p>
                 </div>
               </div>
               <div className="p-3 bg-muted rounded-lg space-y-2">
@@ -224,7 +224,7 @@ export default function SsvTable({ ssvData, isInitialized, isConfirmed, onDataCh
                 <p className="font-mono font-semibold">{fmt(editRow.consumReferinta)} mp</p>
               </div>
               <div className="space-y-2">
-                <Label>Cantitate alocată (lei)</Label>
+                <Label>Cantitate alocată (buc)</Label>
                 <Input
                   type="number"
                   value={editCantitate}
