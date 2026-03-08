@@ -745,6 +745,17 @@ const UtilitiesServices = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {historyPeriodFilter && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setDeleteArchiveConfirmOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Șterge Arhiva {formatPeriod(historyPeriodFilter)}
+                </Button>
+              )}
             </div>
 
             {historyData.length > 0 && <SummaryStats data={historyStats} />}
