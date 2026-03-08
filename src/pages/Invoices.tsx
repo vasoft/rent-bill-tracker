@@ -120,6 +120,16 @@ const Invoices = () => {
     setFormOpen(true);
   };
 
+
+  const handleDeleteInvoice = async (invoice: SupplierInvoice) => {
+    const dbRecord = await db.supplierInvoices.where('externalId').equals(invoice.id).first();
+    if (dbRecord) {
+      await db.supplierInvoices.delete(dbRecord.id!);
+    }
+    setInvoicesList(prev => prev.filter(inv => inv.id !== invoice.id));
+    setDeleteTarget(null);
+  };
+
   const handleFormSubmit = async (data: InvoiceFormSubmitData) => {
     const externalId = `INV${Date.now()}`;
     const netValue = data.netValueTaxable + data.netValueExempt;
