@@ -192,10 +192,21 @@ const UtilitiesServices = () => {
         totalValue: fmt(vData.reduce((s, r) => s + r.valoareTotala, 0)),
       } as SummaryStatsData;
     }
+    if (currentUtilityFilter === 'AA') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(aaData.map(r => r.spaceId)).size,
+        clientsCount: new Set(aaData.map(r => r.clientId)).size,
+        totalConsumption: fmt(aaData.reduce((s, r) => s + r.cantitateAlocata, 0)),
+        totalNetValue: fmt(aaData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(aaData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(aaData.reduce((s, r) => s + r.total, 0)),
+      } as SummaryStatsData;
+    }
     // Only count rows where data has been recorded
     const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
-  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData]);
+  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData]);
 
   // All distinct utility types present in current month data
   const activeUtilityTypes = useMemo(() => {
