@@ -202,10 +202,21 @@ const UtilitiesServices = () => {
 
   // Stats for a specific utility type (for per-utility close dialog)
   const getUtilityStats = useCallback(async (utilityType: string) => {
+    if (utilityType === 'AC') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(acSpaceData.map(r => r.spaceId)).size,
+        clientsCount: new Set(acSpaceData.map(r => r.clientId)).size,
+        totalConsumption: fmt(acSpaceData.reduce((s, r) => s + r.consumTotal, 0)),
+        totalNetValue: fmt(acValueData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(acValueData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(acValueData.reduce((s, r) => s + r.valoareTotala, 0)),
+      } as SummaryStatsData;
+    }
     const rows = currentMonthData.filter(r => r.utilityType === utilityType);
     const withValues = await recalculateValues(rows, currentPeriod);
     return computeStats(withValues);
-  }, [currentMonthData, recalculateValues, currentPeriod]);
+  }, [currentMonthData, recalculateValues, currentPeriod, acSpaceData, acValueData]);
 
   const handleConfirmUtility = async (utilityType: string) => {
     setClosingUtilityType(utilityType);
