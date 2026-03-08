@@ -158,9 +158,11 @@ const UtilitiesServices = () => {
   const liveCurrentMonthData = useMemo(() => {
     if (!editDialogOpen || !editingRow) return filteredCurrentMonthData;
     const previewIndexNew = parseFloat(editIndexNew) || 0;
-    const previewConsumption = calculateConsumption(editingRow.utilityType, editingRow.indexOld, previewIndexNew, editingRow.constant);
+    const previewIsp = editingRow.isp;
+    const previewCsp = editingRow.csp;
+    const previewConsumption = calculateConsumption(editingRow.utilityType, editingRow.indexOld, previewIndexNew, editingRow.constant, previewIsp, previewCsp);
     return filteredCurrentMonthData.map(item =>
-      item.id === editingRow.id ? { ...item, consumption: previewConsumption, indexNew: previewIndexNew } : item
+      item.id === editingRow.id ? { ...item, consumption: previewConsumption, indexNew: previewIndexNew, isp: previewIsp, csp: previewCsp } : item
     );
   }, [filteredCurrentMonthData, editDialogOpen, editingRow, editIndexNew]);
 
