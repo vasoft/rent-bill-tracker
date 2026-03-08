@@ -842,7 +842,7 @@ const UtilitiesServices = () => {
                             totalValue: scData.reduce((s, r) => s + r.total, 0),
                           };
                         }
-                        const rows = currentMonthData.filter(r => r.utilityType === u.id);
+                        const rows = recalculatedData.filter(r => r.utilityType === u.id);
                         return { id: u.id, name: u.fullName, unit: u.id === 'GN' ? 'kWh' : u.unit,
                           consumption: rows.reduce((s, r) => s + r.consumption, 0),
                           netValue: rows.reduce((s, r) => s + r.netValue, 0),
