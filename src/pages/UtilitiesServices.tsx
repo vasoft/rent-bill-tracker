@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Dexie from 'dexie/dist/dexie.mjs';
+import AcTable from '@/components/utilities/AcTable';
 import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
@@ -538,7 +539,15 @@ const UtilitiesServices = () => {
             {isInitialized && filteredCurrentMonthData.length > 0 && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
-              {calculationType === 'consumption' ? (
+              {currentUtilityFilter === 'AC' ? (
+                <AcTable
+                  currentMonthData={currentMonthData}
+                  currentPeriod={currentPeriod}
+                  calculationType={calculationType}
+                  isInitialized={isInitialized}
+                  onEditIndex={handleEditIndex}
+                />
+              ) : calculationType === 'consumption' ? (
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
