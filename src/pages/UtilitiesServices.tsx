@@ -792,7 +792,7 @@ const UtilitiesServices = () => {
                     <Badge
                       key={u.id}
                       variant={isClosed ? 'default' : 'outline'}
-                      className={`gap-1.5 cursor-pointer ${isClosed ? 'bg-green-600 hover:bg-green-700' : ''} ${!isActive ? 'opacity-40' : ''}`}
+                      className={`gap-1.5 cursor-pointer ${isClosed ? 'bg-green-600 hover:bg-green-700' : ''}`}
                       onClick={() => {
                         setCurrentUtilityFilter(u.id);
                         if (isActive && !isClosed) handleConfirmUtility(u.id);
