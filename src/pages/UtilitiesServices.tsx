@@ -264,6 +264,17 @@ const UtilitiesServices = () => {
         totalValue: fmt(ssvData.reduce((s, r) => s + r.total, 0)),
       } as SummaryStatsData;
     }
+    if (currentUtilityFilter === 'SC') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(scData.map(r => r.spaceId)).size,
+        clientsCount: new Set(scData.map(r => r.clientId)).size,
+        totalConsumption: fmt(scData.reduce((s, r) => s + r.cantitateAlocata, 0)),
+        totalNetValue: fmt(scData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(scData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(scData.reduce((s, r) => s + r.total, 0)),
+      } as SummaryStatsData;
+    }
     // Only count rows where data has been recorded
     const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
