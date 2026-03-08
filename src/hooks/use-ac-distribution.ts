@@ -60,44 +60,22 @@ export function useAcDistribution(currentMonthData: CurrentMonthRow[], currentPe
     const spaceRows = occupiedSpaces.map(space => {
       const client = clients.find(c => c.id === space.clientId);
       const acRow = acRows.find(r => r.spaceId === space.id);
-      const hasMeter = space.racordAA !== '';
 
       return {
         space,
         client,
         acRow,
-        hasMeter,
-        meteredConsumption: hasMeter && acRow ? acRow.consumption : 0,
       };
     });
 
-    const totalMeteredAa = spaceRows
-      .filter(r => r.hasMeter)
-      .reduce((sum, r) => sum + r.meteredConsumption, 0);
-
-    const hasMeteredConsumption = totalMeteredAa > 0;
     const totalPersonsAll = spaceRows.reduce((sum, r) => sum + r.space.persons, 0);
-
-    let aaCsp = 0;
-    if (!hasMeteredConsumption) {
-      aaCsp = totalPersonsAll > 0 ? invoicedAaConsumption / totalPersonsAll : 0;
-    } else {
-      const nonMeteredSpaces = spaceRows.filter(r => !r.hasMeter);
-      const totalPersonsNonMetered = nonMeteredSpaces.reduce((sum, r) => sum + r.space.persons, 0);
-      const aaDifference = Math.max(0, invoicedAaConsumption - totalMeteredAa);
-      aaCsp = totalPersonsNonMetered > 0 ? aaDifference / totalPersonsNonMetered : 0;
-    }
+    const aaCsp = totalPersonsAll > 0 ? invoicedAaConsumption / totalPersonsAll : 0;
 
     const totalArea = spaceRows.reduce((sum, r) => sum + r.space.area, 0);
     const amCsp = totalArea > 0 ? invoicedAmConsumption / totalArea : 0;
 
     return spaceRows.map(r => {
-      let alimentareApa: number;
-      if (!hasMeteredConsumption) {
-        alimentareApa = r.space.persons * aaCsp;
-      } else {
-        alimentareApa = r.hasMeter ? r.meteredConsumption : r.space.persons * aaCsp;
-      }
+      const alimentareApa = r.space.persons * aaCsp;
       const canalizare = alimentareApa;
       const apeMeteorie = r.space.area * amCsp;
       const taxa = canalizare + apeMeteorie;
