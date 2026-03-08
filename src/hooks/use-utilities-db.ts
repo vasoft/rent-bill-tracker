@@ -275,22 +275,22 @@ export function useUtilitiesDb() {
     });
   }, []);
 
-  const closePeriod = useCallback(async (period: string) => {
+  const closePeriod = useCallback(async (period: string): Promise<boolean> => {
     const currentData = await db.currentMonth.where('period').equals(period).toArray();
     if (currentData.length === 0) {
       toast.error('Nu există date pentru această perioadă!');
-      return;
+      return false;
     }
 
-    // Check metered utilities have indexNew > 0, non-metered have csp > 0
-    const incomplete = currentData.some(d => {
+    // Validate only metered utilities (indexNew must be completed)
+    const incompleteMetered = currentData.some(d => {
       const utility = UTILITIES.find(u => u.id === d.utilityType);
-      if (utility && !utility.hasMeter) return d.csp === 0;
+      if (utility && !utility.hasMeter) return false;
       return d.indexNew === 0;
     });
-    if (incomplete) {
-      toast.error('Toate datele de consum trebuie completate înainte de închiderea perioadei!');
-      return;
+    if (incompleteMetered) {
+      toast.error('Completați Index Nou pentru toate utilitățile cu contor înainte de închidere!');
+      return false;
     }
 
     // Recalculate values before closing
@@ -343,6 +343,7 @@ export function useUtilitiesDb() {
     setCurrentPeriod(`${ny}-${String(nm).padStart(2, '0')}`);
 
     toast.success(`Perioada ${period} a fost închisă și transferată în istoric!`);
+    return true;
   }, [recalculateValues]);
 
   const loadPeriodData = useCallback(async (period: string) => {
