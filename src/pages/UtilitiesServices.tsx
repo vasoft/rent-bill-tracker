@@ -595,10 +595,17 @@ const UtilitiesServices = () => {
               </div>
             )}
 
-            {isInitialized && (filteredCurrentMonthData.length > 0 || (currentUtilityFilter === 'AC' && acSpaceData.length > 0)) && <SummaryStats data={currentStats} />}
+            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0) && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
-              {currentUtilityFilter === 'AC' ? (
+              {currentUtilityFilter === 'AA' ? (
+                <AaTable
+                  aaData={aaData}
+                  isInitialized={isInitialized}
+                  isConfirmed={closedUtilities.has('AA')}
+                  onDataChange={setAaData}
+                />
+              ) : currentUtilityFilter === 'AC' ? (
                 <AcTable
                   acSpaceData={acSpaceData}
                   acValueData={acValueData}
