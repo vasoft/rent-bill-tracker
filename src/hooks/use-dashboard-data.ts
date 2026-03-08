@@ -37,7 +37,8 @@ export function useDashboardData() {
   useEffect(() => {
     seedIfEmpty().then(async () => {
       const dists = await db.distributions.toArray();
-      const allPeriods = [...new Set(dists.map(d => d.period))].sort().reverse();
+      const allPeriods = [...new Set(dists.map(d => d.period))] as string[];
+      allPeriods.sort().reverse();
       setPeriods(allPeriods);
       if (allPeriods.length > 0) {
         setSelectedPeriod(allPeriods[0]);
@@ -70,7 +71,7 @@ export function useDashboardData() {
     }).filter(u => u.totalValue > 0 || u.consumption > 0);
 
     // By client
-    const clientIds = [...new Set(dists.map(d => d.clientId))];
+    const clientIds = [...new Set(dists.map(d => d.clientId))] as string[];
     const byClient = clientIds.map(cid => {
       const client = clients.find(c => c.id === cid);
       const cDists = dists.filter(d => d.clientId === cid);
