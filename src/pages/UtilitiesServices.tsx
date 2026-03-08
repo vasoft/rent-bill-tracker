@@ -1360,7 +1360,7 @@ const UtilitiesServices = () => {
               </DialogDescription>
             </DialogHeader>
             <div className="py-4">
-              <SummaryStats data={currentStats} compact />
+              <SummaryStats data={closeMonthStats} hideConsumption compact />
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setCloseConfirmOpen(false)}>Anulează</Button>
