@@ -3,9 +3,11 @@ import Dexie from 'dexie/dist/dexie.mjs';
 import AcTable from '@/components/utilities/AcTable';
 import AaTable from '@/components/utilities/AaTable';
 import AsTable from '@/components/utilities/AsTable';
+import SmTable from '@/components/utilities/SmTable';
 import { useAcDistribution } from '@/hooks/use-ac-distribution';
 import { useAaDistribution } from '@/hooks/use-aa-distribution';
 import { useAsDistribution } from '@/hooks/use-as-distribution';
+import { useSmDistribution } from '@/hooks/use-sm-distribution';
 import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
@@ -51,6 +53,11 @@ const UtilitiesServices = () => {
   const { asData: asDistData } = useAsDistribution(acSpaceData, currentPeriod);
   const [asData, setAsData] = useState(asDistData);
   useEffect(() => { setAsData(asDistData); }, [asDistData]);
+
+  // SM distribution hook (depends on EE values + A&C values)
+  const { smData: smDistData } = useSmDistribution(acValueData, currentMonthData, currentPeriod);
+  const [smData, setSmData] = useState(smDistData);
+  useEffect(() => { setSmData(smDistData); }, [smDistData]);
 
   // Filters
   const [historyUtilityFilter, setHistoryUtilityFilter] = useState<string>('all');
