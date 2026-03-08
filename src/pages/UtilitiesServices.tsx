@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Dexie from 'dexie/dist/dexie.mjs';
 import AcTable from '@/components/utilities/AcTable';
+import { useAcDistribution } from '@/hooks/use-ac-distribution';
 import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
@@ -33,6 +34,9 @@ const UtilitiesServices = () => {
     closePeriod,
     loadPeriodData,
   } = useUtilitiesDb();
+
+  // AC distribution hook
+  const { acSpaceData, acValueData, acSubLines } = useAcDistribution(currentMonthData, currentPeriod);
 
   // Filters
   const [historyUtilityFilter, setHistoryUtilityFilter] = useState<string>('all');
@@ -168,10 +172,23 @@ const UtilitiesServices = () => {
   }, [filteredCurrentMonthData, editDialogOpen, editingRow, editIndexNew]);
 
   const currentStats = useMemo(() => {
+    // For AC filter, use acValueData/acSpaceData instead of currentMonthData rows
+    if (currentUtilityFilter === 'AC') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      const vData = acValueData;
+      return {
+        spacesCount: new Set(acSpaceData.map(r => r.spaceId)).size,
+        clientsCount: new Set(acSpaceData.map(r => r.clientId)).size,
+        totalConsumption: fmt(acSpaceData.reduce((s, r) => s + r.consumTotal, 0)),
+        totalNetValue: fmt(vData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(vData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(vData.reduce((s, r) => s + r.valoareTotala, 0)),
+      } as SummaryStatsData;
+    }
     // Only count rows where data has been recorded
     const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
-  }, [liveCurrentMonthData]);
+  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData]);
 
   // All distinct utility types present in current month data
   const activeUtilityTypes = useMemo(() => {
@@ -185,10 +202,21 @@ const UtilitiesServices = () => {
 
   // Stats for a specific utility type (for per-utility close dialog)
   const getUtilityStats = useCallback(async (utilityType: string) => {
+    if (utilityType === 'AC') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(acSpaceData.map(r => r.spaceId)).size,
+        clientsCount: new Set(acSpaceData.map(r => r.clientId)).size,
+        totalConsumption: fmt(acSpaceData.reduce((s, r) => s + r.consumTotal, 0)),
+        totalNetValue: fmt(acValueData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(acValueData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(acValueData.reduce((s, r) => s + r.valoareTotala, 0)),
+      } as SummaryStatsData;
+    }
     const rows = currentMonthData.filter(r => r.utilityType === utilityType);
     const withValues = await recalculateValues(rows, currentPeriod);
     return computeStats(withValues);
-  }, [currentMonthData, recalculateValues, currentPeriod]);
+  }, [currentMonthData, recalculateValues, currentPeriod, acSpaceData, acValueData]);
 
   const handleConfirmUtility = async (utilityType: string) => {
     setClosingUtilityType(utilityType);
@@ -536,13 +564,14 @@ const UtilitiesServices = () => {
               </div>
             )}
 
-            {isInitialized && filteredCurrentMonthData.length > 0 && <SummaryStats data={currentStats} />}
+            {isInitialized && (filteredCurrentMonthData.length > 0 || (currentUtilityFilter === 'AC' && acSpaceData.length > 0)) && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
               {currentUtilityFilter === 'AC' ? (
                 <AcTable
-                  currentMonthData={currentMonthData}
-                  currentPeriod={currentPeriod}
+                  acSpaceData={acSpaceData}
+                  acValueData={acValueData}
+                  acSubLines={acSubLines}
                   calculationType={calculationType}
                   isInitialized={isInitialized}
                   onEditIndex={handleEditIndex}
