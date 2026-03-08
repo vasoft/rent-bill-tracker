@@ -583,7 +583,54 @@ const UtilitiesServices = () => {
   };
 
   const handleClosePeriod = async () => {
-    const closed = await closePeriod(currentPeriod);
+    // Build service overrides from specialized distribution hooks
+    const serviceOverrides: {
+      spaceId: string;
+      clientId: string;
+      utilityType: import('@/types/utility').UtilityType;
+      consumption: number;
+      netValue: number;
+      vatValue: number;
+      totalValue: number;
+    }[] = [];
+
+    // AC distributions
+    for (const row of acValueData) {
+      serviceOverrides.push({
+        spaceId: row.spaceId,
+        clientId: row.clientId,
+        utilityType: 'AC',
+        consumption: row.consumTotal,
+        netValue: row.valoareNeta,
+        vatValue: row.valoareTva,
+        totalValue: row.valoareTotala,
+      });
+    }
+
+    // AA, AS, SM, SSV, SC distributions
+    const serviceHookData: { data: typeof aaData; type: import('@/types/utility').UtilityType }[] = [
+      { data: aaData, type: 'AA' },
+      { data: asData, type: 'AS' },
+      { data: smData, type: 'SM' },
+      { data: ssvData, type: 'SSV' },
+      { data: scData, type: 'SC' },
+    ];
+
+    for (const { data, type } of serviceHookData) {
+      for (const row of data) {
+        serviceOverrides.push({
+          spaceId: row.spaceId,
+          clientId: row.clientId,
+          utilityType: type,
+          consumption: row.cantitateAlocata,
+          netValue: row.valoareNeta,
+          vatValue: row.valoareTva,
+          totalValue: row.total,
+        });
+      }
+    }
+
+    const closed = await closePeriod(currentPeriod, serviceOverrides);
     if (!closed) return;
 
     await db.confirmedUtilities.where('period').equals(currentPeriod).delete();

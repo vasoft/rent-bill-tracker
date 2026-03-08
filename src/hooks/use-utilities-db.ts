@@ -275,15 +275,23 @@ export function useUtilitiesDb() {
     });
   }, []);
 
-  const closePeriod = useCallback(async (period: string): Promise<boolean> => {
+  const closePeriod = useCallback(async (
+    period: string,
+    serviceOverrides?: {
+      spaceId: string;
+      clientId: string;
+      utilityType: UtilityType;
+      consumption: number;
+      netValue: number;
+      vatValue: number;
+      totalValue: number;
+    }[]
+  ): Promise<boolean> => {
     const currentData = await db.currentMonth.where('period').equals(period).toArray();
     if (currentData.length === 0) {
       toast.error('Nu există date pentru această perioadă!');
       return false;
     }
-
-    // Validation is handled by the UI: all utilities must be individually
-    // confirmed before the close button becomes active.
 
     // Recalculate values before closing
     const rows = currentData.map(mapDbToRow);
@@ -305,9 +313,13 @@ export function useUtilitiesDb() {
       );
     }
 
-    // Save distributions to history
-    await db.distributions.bulkAdd(
-      withValues.map(r => ({
+    // Build distributions: use service overrides for AC/AA/AS/SM/SSV/SC, recalculated for EE/GN
+    const serviceTypes: UtilityType[] = ['AC', 'AA', 'AS', 'SM', 'SSV', 'SC'];
+    const overrideSet = new Set(serviceOverrides?.map(o => `${o.spaceId}-${o.utilityType}`) || []);
+
+    const standardDists = withValues
+      .filter(r => !serviceTypes.includes(r.utilityType))
+      .map(r => ({
         spaceId: r.spaceId,
         clientId: r.clientId,
         utilityType: r.utilityType,
@@ -316,9 +328,23 @@ export function useUtilitiesDb() {
         netValue: r.netValue,
         vatValue: r.vatValue,
         totalValue: r.totalValue,
-        distributionMethod: 'meter',
-      }))
-    );
+        distributionMethod: 'meter' as string,
+      }));
+
+    const serviceDists = (serviceOverrides || []).map(o => ({
+      spaceId: o.spaceId,
+      clientId: o.clientId,
+      utilityType: o.utilityType,
+      period,
+      consumption: o.consumption,
+      netValue: o.netValue,
+      vatValue: o.vatValue,
+      totalValue: o.totalValue,
+      distributionMethod: 'proportional' as string,
+    }));
+
+    // Save distributions to history
+    await db.distributions.bulkAdd([...standardDists, ...serviceDists]);
 
     // Clear current month
     await db.currentMonth.where('period').equals(period).delete();
