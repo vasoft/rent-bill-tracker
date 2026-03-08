@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
-import { clients, spaces, consumptionDistributions, getClientTotalByPeriod } from '@/data/mockData';
+import { clients, spaces } from '@/data/mockData';
+import { db } from '@/lib/db';
 import { UTILITIES, UtilityType } from '@/types/utility';
 import { 
   Table, 
@@ -32,13 +33,38 @@ import ConsumptionNoteDocument from '@/components/consumption-notes/ConsumptionN
 
 
 const ConsumptionNotes = () => {
-  const [periodFilter, setPeriodFilter] = useState<string>('2025-12');
+  const [periodFilter, setPeriodFilter] = useState<string>('');
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
+  const [dbDistributions, setDbDistributions] = useState<any[]>([]);
+
+  // Load available periods and distributions from DB
+  useEffect(() => {
+    const loadPeriods = async () => {
+      const allDists = await db.distributions.toArray();
+      const periods = [...new Set(allDists.map(d => d.period))].sort().reverse();
+      setAvailablePeriods(periods);
+      if (periods.length > 0 && !periodFilter) {
+        setPeriodFilter(periods[0]);
+      }
+    };
+    loadPeriods();
+  }, []);
+
+  // Load distributions for selected period
+  useEffect(() => {
+    if (!periodFilter) return;
+    const loadDistributions = async () => {
+      const dists = await db.distributions.where('period').equals(periodFilter).toArray();
+      setDbDistributions(dists);
+    };
+    loadDistributions();
+  }, [periodFilter]);
 
   const clientNotes = clients.map(client => {
     const clientSpaces = spaces.filter(s => client.spaces.includes(s.id));
-    const distributions = consumptionDistributions.filter(
-      d => d.clientId === client.id && d.period === periodFilter
+    const distributions = dbDistributions.filter(
+      d => d.clientId === client.id
     );
     
     const byUtility = UTILITIES.reduce((acc, utility) => {
@@ -50,7 +76,7 @@ const ConsumptionNotes = () => {
       return acc;
     }, {} as Record<UtilityType, { consumption: number; value: number }>);
 
-    const total = getClientTotalByPeriod(client.id, periodFilter);
+    const total = distributions.reduce((sum, d) => sum + d.totalValue, 0);
     
     return {
       ...client,
@@ -135,9 +161,11 @@ const ConsumptionNotes = () => {
               <SelectValue placeholder="Perioadă" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="2025-12">Decembrie 2025</SelectItem>
-              <SelectItem value="2025-11">Noiembrie 2025</SelectItem>
-              <SelectItem value="2025-10">Octombrie 2025</SelectItem>
+              {availablePeriods.map(period => (
+                <SelectItem key={period} value={period}>
+                  {formatPeriod(period)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <div className="flex gap-2">
