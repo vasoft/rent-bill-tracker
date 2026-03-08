@@ -564,7 +564,7 @@ const UtilitiesServices = () => {
               </div>
             )}
 
-            {isInitialized && filteredCurrentMonthData.length > 0 && <SummaryStats data={currentStats} />}
+            {isInitialized && (filteredCurrentMonthData.length > 0 || (currentUtilityFilter === 'AC' && acSpaceData.length > 0)) && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
               {currentUtilityFilter === 'AC' ? (
