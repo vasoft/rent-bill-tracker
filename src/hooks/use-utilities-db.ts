@@ -228,17 +228,28 @@ export function useUtilitiesDb() {
     indexOld: number,
     indexNew: number,
     constant: number,
-    utilityType: UtilityType
+    utilityType: UtilityType,
+    isp?: number,
+    csp?: number
   ) => {
-    const consumption = calculateConsumption(utilityType, indexOld, indexNew, constant);
-    await db.currentMonth.update(dbId, { indexOld, indexNew, constant, consumption });
-
-    setCurrentMonthData(prev => prev.map(item =>
-      item.id === rowId
-        ? { ...item, indexOld, indexNew, constant, consumption }
-        : item
-    ));
-    toast.success('Indexul a fost salvat!');
+    const consumption = calculateConsumption(utilityType, indexOld, indexNew, constant, isp, csp);
+    const utility = UTILITIES.find(u => u.id === utilityType);
+    if (utility && !utility.hasMeter) {
+      await db.currentMonth.update(dbId, { isp: isp || 0, csp: csp || 0, consumption });
+      setCurrentMonthData(prev => prev.map(item =>
+        item.id === rowId
+          ? { ...item, isp: isp || 0, csp: csp || 0, consumption }
+          : item
+      ));
+    } else {
+      await db.currentMonth.update(dbId, { indexOld, indexNew, constant, consumption });
+      setCurrentMonthData(prev => prev.map(item =>
+        item.id === rowId
+          ? { ...item, indexOld, indexNew, constant, consumption }
+          : item
+      ));
+    }
+    toast.success('Datele au fost salvate!');
   }, []);
 
   const recalculateValues = useCallback(async (data: CurrentMonthRow[], period: string): Promise<CurrentMonthRow[]> => {
