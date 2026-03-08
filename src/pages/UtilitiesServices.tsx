@@ -35,6 +35,9 @@ const UtilitiesServices = () => {
     loadPeriodData,
   } = useUtilitiesDb();
 
+  // AC distribution hook
+  const { acSpaceData, acValueData, acSubLines } = useAcDistribution(currentMonthData, currentPeriod);
+
   // Filters
   const [historyUtilityFilter, setHistoryUtilityFilter] = useState<string>('all');
   const [historyPeriodFilter, setHistoryPeriodFilter] = useState<string>('');
