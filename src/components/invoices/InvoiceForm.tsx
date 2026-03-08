@@ -140,14 +140,8 @@ const InvoiceForm = ({
   const netValue = (Number(netValueTaxable) || 0) + (Number(netValueExempt) || 0);
   const totalValue = netValue + (Number(vatValue) || 0);
 
-  // Auto-calculate TVA for non-AC invoices
-  useEffect(() => {
-    if (isAC) return;
-    const taxable = Number(netValueTaxable) || 0;
-    const rate = Number(vatRate) || 0;
-    const calculatedVat = Math.round(taxable * rate / 100 * 100) / 100;
-    form.setValue('vatValue', calculatedVat);
-  }, [netValueTaxable, vatRate, form, isAC]);
+
+
 
   // For AC: sync totals from sub-lines
   const updateAcTotals = (lines: AcSubLine[]) => {
@@ -172,10 +166,6 @@ const InvoiceForm = ({
       const line = { ...updated[index] };
       (line as any)[field] = value;
 
-      // Auto-calc vatValue and totalValue
-      if (field === 'netValue' || field === 'vatRate') {
-        line.vatValue = Math.round(line.netValue * line.vatRate / 100 * 100) / 100;
-      }
       line.totalValue = line.netValue + line.vatValue;
 
       updated[index] = line;
@@ -586,7 +576,7 @@ const InvoiceForm = ({
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{line.name}</span>
                     </div>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="text-xs text-muted-foreground">Consum ({line.unit})</label>
                         <Input
@@ -610,31 +600,14 @@ const InvoiceForm = ({
                         />
                       </div>
                       <div>
-                        <label className="text-xs text-muted-foreground">TVA %</label>
-                        <Select
-                          value={String(line.vatRate)}
-                          onValueChange={(val) => handleAcSubLineChange(idx, 'vatRate', Number(val))}
-                          disabled={mode === 'view'}
-                        >
-                          <SelectTrigger className="h-9">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="19">19%</SelectItem>
-                            <SelectItem value="9">9%</SelectItem>
-                            <SelectItem value="5">5%</SelectItem>
-                            <SelectItem value="0">0%</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
                         <label className="text-xs text-muted-foreground">TVA (lei)</label>
                         <Input
                           type="number"
                           step="0.01"
                           value={line.vatValue || ''}
-                          disabled
-                          className="bg-muted/50"
+                          onChange={(e) => handleAcSubLineChange(idx, 'vatValue', Number(e.target.value) || 0)}
+                          disabled={mode === 'view'}
+                          placeholder="0"
                         />
                       </div>
                     </div>
@@ -699,35 +672,6 @@ const InvoiceForm = ({
                   )}
                 />
 
-                {/* VAT Rate */}
-                <FormField
-                  control={form.control}
-                  name="vatRate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cotă TVA (%)</FormLabel>
-                      <Select 
-                        onValueChange={(val) => field.onChange(Number(val))} 
-                        value={String(field.value)}
-                        disabled={mode === 'view'}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="21">21%</SelectItem>
-                          <SelectItem value="11">11%</SelectItem>
-                          <SelectItem value="9">9%</SelectItem>
-                          <SelectItem value="5">5%</SelectItem>
-                          <SelectItem value="0">0%</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 {/* Net Value Taxable + TVA */}
                 <div className="grid grid-cols-2 gap-4">
@@ -746,9 +690,6 @@ const InvoiceForm = ({
                             disabled={mode === 'view'}
                           />
                         </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          Cotă TVA {vatRate}%
-                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -759,20 +700,16 @@ const InvoiceForm = ({
                     name="vatValue"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>TVA Calculat (lei)</FormLabel>
+                        <FormLabel>TVA (lei)</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
                             type="number"
                             step="0.01"
                             placeholder="0"
-                            disabled
-                            className="bg-muted/50"
+                            disabled={mode === 'view'}
                           />
                         </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          Auto: {Number(netValueTaxable || 0).toLocaleString('ro-RO')} × {vatRate}%
-                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -810,7 +747,7 @@ const InvoiceForm = ({
                     <span>{(Number(netValueTaxable) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">TVA ({vatRate}%):</span>
+                    <span className="text-muted-foreground">TVA:</span>
                     <span>{(Number(vatValue) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
                   </div>
                   {(Number(netValueExempt) || 0) > 0 && (
