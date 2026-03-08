@@ -36,6 +36,8 @@ export interface DbCurrentMonth {
   indexOld: number;
   indexNew: number;
   constant: number;
+  isp: number;    // Identificator Specific (nr persoane, suprafață, etc.)
+  csp: number;    // Consum Specific (tarif/rată)
   consumption: number;
   netValue: number;
   vatValue: number;

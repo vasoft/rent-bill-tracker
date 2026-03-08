@@ -15,9 +15,12 @@ export interface CurrentMonthRow {
   utilityType: UtilityType;
   utilityName: string;
   unit: string;
+  hasMeter: boolean;
   indexOld: number;
   indexNew: number;
   constant: number;
+  isp: number;
+  csp: number;
   consumption: number;
   netValue: number;
   vatValue: number;
