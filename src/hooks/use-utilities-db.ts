@@ -282,16 +282,8 @@ export function useUtilitiesDb() {
       return false;
     }
 
-    // Validate only metered utilities (indexNew must be completed)
-    const incompleteMetered = currentData.some(d => {
-      const utility = UTILITIES.find(u => u.id === d.utilityType);
-      if (utility && !utility.hasMeter) return false;
-      return d.indexNew === 0;
-    });
-    if (incompleteMetered) {
-      toast.error('Completați Index Nou pentru toate utilitățile cu contor înainte de închidere!');
-      return false;
-    }
+    // Validation is handled by the UI: all utilities must be individually
+    // confirmed before the close button becomes active.
 
     // Recalculate values before closing
     const rows = currentData.map(mapDbToRow);
