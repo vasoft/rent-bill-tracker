@@ -90,6 +90,7 @@ const UtilitiesServices = () => {
 
   // Close period confirmation dialog
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const [deleteArchiveConfirmOpen, setDeleteArchiveConfirmOpen] = useState(false);
 
   // Generate available consumption periods (exclude already closed/archived periods)
   const availableConsumptionPeriods = useMemo(() => {
