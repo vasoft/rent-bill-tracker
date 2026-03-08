@@ -288,10 +288,73 @@ const UtilitiesServices = () => {
         totalValue: fmt(scData.reduce((s, r) => s + r.total, 0)),
       } as SummaryStatsData;
     }
-    // Only count rows where data has been recorded
-    const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
-    return computeStats(recordedRows);
-  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData, smData, ssvData, scData]);
+    // "All utilities" - aggregate from all sources
+    const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+    
+    // EE and GN from recalculatedData
+    const eeRows = recalculatedData.filter(r => r.utilityType === 'EE');
+    const gnRows = recalculatedData.filter(r => r.utilityType === 'GN');
+    
+    const allSpaces = new Set([
+      ...eeRows.map(r => r.spaceId),
+      ...gnRows.map(r => r.spaceId),
+      ...acSpaceData.map(r => r.spaceId),
+      ...aaData.map(r => r.spaceId),
+      ...asData.map(r => r.spaceId),
+      ...smData.map(r => r.spaceId),
+      ...ssvData.map(r => r.spaceId),
+      ...scData.map(r => r.spaceId),
+    ]);
+    const allClients = new Set([
+      ...eeRows.map(r => r.clientId),
+      ...gnRows.map(r => r.clientId),
+      ...acSpaceData.map(r => r.clientId),
+      ...aaData.map(r => r.clientId),
+      ...asData.map(r => r.clientId),
+      ...smData.map(r => r.clientId),
+      ...ssvData.map(r => r.clientId),
+      ...scData.map(r => r.clientId),
+    ]);
+
+    const totalNet = 
+      eeRows.reduce((s, r) => s + r.netValue, 0) +
+      gnRows.reduce((s, r) => s + r.netValue, 0) +
+      acValueData.reduce((s, r) => s + r.valoareNeta, 0) +
+      aaData.reduce((s, r) => s + r.valoareNeta, 0) +
+      asData.reduce((s, r) => s + r.valoareNeta, 0) +
+      smData.reduce((s, r) => s + r.valoareNeta, 0) +
+      ssvData.reduce((s, r) => s + r.valoareNeta, 0) +
+      scData.reduce((s, r) => s + r.valoareNeta, 0);
+
+    const totalVat = 
+      eeRows.reduce((s, r) => s + r.vatValue, 0) +
+      gnRows.reduce((s, r) => s + r.vatValue, 0) +
+      acValueData.reduce((s, r) => s + r.valoareTva, 0) +
+      aaData.reduce((s, r) => s + r.valoareTva, 0) +
+      asData.reduce((s, r) => s + r.valoareTva, 0) +
+      smData.reduce((s, r) => s + r.valoareTva, 0) +
+      ssvData.reduce((s, r) => s + r.valoareTva, 0) +
+      scData.reduce((s, r) => s + r.valoareTva, 0);
+
+    const totalVal = 
+      eeRows.reduce((s, r) => s + r.totalValue, 0) +
+      gnRows.reduce((s, r) => s + r.totalValue, 0) +
+      acValueData.reduce((s, r) => s + r.valoareTotala, 0) +
+      aaData.reduce((s, r) => s + r.total, 0) +
+      asData.reduce((s, r) => s + r.total, 0) +
+      smData.reduce((s, r) => s + r.total, 0) +
+      ssvData.reduce((s, r) => s + r.total, 0) +
+      scData.reduce((s, r) => s + r.total, 0);
+
+    return {
+      spacesCount: allSpaces.size,
+      clientsCount: allClients.size,
+      totalConsumption: '-',
+      totalNetValue: fmt(totalNet),
+      totalVat: fmt(totalVat),
+      totalValue: fmt(totalVal),
+    } as SummaryStatsData;
+  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData, smData, ssvData, scData, recalculatedData]);
 
   // All distinct utility types present in current month data
   const activeUtilityTypes = useMemo(() => {
