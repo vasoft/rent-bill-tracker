@@ -173,7 +173,7 @@ export default function AsTable({ asData, isInitialized, isConfirmed, onDataChan
       <Dialog open={!!viewRow} onOpenChange={() => setViewRow(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Detalii Apă Suplimentară</DialogTitle>
+            <DialogTitle>Detalii Apă din Subteran</DialogTitle>
             <DialogDescription>{viewRow?.spaceName} — {viewRow?.clientName}</DialogDescription>
           </DialogHeader>
           {viewRow && (
@@ -224,7 +224,7 @@ export default function AsTable({ asData, isInitialized, isConfirmed, onDataChan
       <Dialog open={!!editRow} onOpenChange={() => setEditRow(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Modificare Apă Suplimentară</DialogTitle>
+            <DialogTitle>Modificare Apă din Subteran</DialogTitle>
             <DialogDescription>{editRow?.spaceName} — {editRow?.clientName}</DialogDescription>
           </DialogHeader>
           {editRow && (
