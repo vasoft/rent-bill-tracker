@@ -44,6 +44,7 @@ const Invoices = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'view'>('add');
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SupplierInvoice | null>(null);
 
   // Load invoices from Dexie on mount
   useEffect(() => {
