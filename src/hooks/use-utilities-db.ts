@@ -43,7 +43,12 @@ export interface HistoryRow {
   totalValue: number;
 }
 
-function calculateConsumption(utilityType: UtilityType, indexOld: number, indexNew: number, constant: number): number {
+function calculateConsumption(utilityType: UtilityType, indexOld: number, indexNew: number, constant: number, isp?: number, csp?: number): number {
+  const utility = UTILITIES.find(u => u.id === utilityType);
+  if (utility && !utility.hasMeter) {
+    // Non-metered service: Isp * Csp
+    return (isp || 0) * (csp || 0);
+  }
   const diff = Math.max(0, indexNew - indexOld);
   switch (utilityType) {
     case 'EE': return diff * constant;
