@@ -539,7 +539,15 @@ const UtilitiesServices = () => {
             {isInitialized && filteredCurrentMonthData.length > 0 && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
-              {calculationType === 'consumption' ? (
+              {currentUtilityFilter === 'AC' ? (
+                <AcTable
+                  currentMonthData={currentMonthData}
+                  currentPeriod={currentPeriod}
+                  calculationType={calculationType}
+                  isInitialized={isInitialized}
+                  onEditIndex={handleEditIndex}
+                />
+              ) : calculationType === 'consumption' ? (
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
