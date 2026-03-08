@@ -70,81 +70,81 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Grid - Row 1: Total + Metered Utilities */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           <StatCard
             title="Total Utilități Luna"
             value={`${periodData.totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei`}
             trend={valueChange !== null ? { value: Math.round(valueChange * 100) / 100, label: 'vs. luna trecută' } : undefined}
-            icon={<FileText className="w-5 h-5" />}
+            icon={<FileText className="w-4 h-4" />}
             iconBgClass="bg-primary/10 text-primary"
           />
           <StatCard
             title="Energie Electrică"
             value={`${(eeStats?.consumption || 0).toLocaleString('ro-RO')} kWh`}
             subtitle={`${(eeStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
-            icon={<Zap className="w-5 h-5" />}
+            icon={<Zap className="w-4 h-4" />}
             iconBgClass="bg-chart-ee/10 text-chart-ee"
           />
           <StatCard
             title="Apă și Canalizare"
             value={`${(acStats?.consumption || 0).toLocaleString('ro-RO')} mc`}
             subtitle={`${(acStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
-            icon={<Droplets className="w-5 h-5" />}
+            icon={<Droplets className="w-4 h-4" />}
             iconBgClass="bg-chart-ac/10 text-chart-ac"
           />
           <StatCard
             title="Gaze Naturale"
             value={`${(gnStats?.consumption || 0).toLocaleString('ro-RO')} Nmc`}
             subtitle={`${(gnStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
-            icon={<Flame className="w-5 h-5" />}
+            icon={<Flame className="w-4 h-4" />}
             iconBgClass="bg-chart-gn/10 text-chart-gn"
           />
         </div>
 
         {/* Stats Grid - Row 2: Services + Occupancy */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
           <StatCard
             title="Analize Ape Uzate"
             value={`${(aaStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
             subtitle={aaStats?.consumption ? `${aaStats.consumption.toLocaleString('ro-RO')} buc` : undefined}
-            icon={<Beaker className="w-5 h-5" />}
+            icon={<Beaker className="w-4 h-4" />}
             iconBgClass="bg-chart-aa/10 text-chart-aa"
           />
           <StatCard
             title="Apă din Subteran"
             value={`${(asStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
             subtitle={asStats?.consumption ? `${asStats.consumption.toLocaleString('ro-RO')} mc` : undefined}
-            icon={<Waves className="w-5 h-5" />}
+            icon={<Waves className="w-4 h-4" />}
             iconBgClass="bg-chart-as/10 text-chart-as"
           />
           <StatCard
             title="Mentenanță"
             value={`${(smStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
-            icon={<Wrench className="w-5 h-5" />}
+            icon={<Wrench className="w-4 h-4" />}
             iconBgClass="bg-chart-sm/10 text-chart-sm"
           />
           <StatCard
             title="Supraveghere Video"
             value={`${(ssvStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
-            icon={<Video className="w-5 h-5" />}
+            icon={<Video className="w-4 h-4" />}
             iconBgClass="bg-chart-ssv/10 text-chart-ssv"
           />
           <StatCard
             title="Curățenie"
             value={`${(scStats?.totalValue || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei`}
-            icon={<Sparkles className="w-5 h-5" />}
+            icon={<Sparkles className="w-4 h-4" />}
             iconBgClass="bg-chart-sc/10 text-chart-sc"
           />
           <StatCard
             title="Clienți Activi"
             value={periodData.activeClients}
-            icon={<Users className="w-5 h-5" />}
+            icon={<Users className="w-4 h-4" />}
             iconBgClass="bg-success/10 text-success"
           />
           <StatCard
             title="Spații Ocupate"
             value={periodData.occupiedSpaces}
-            icon={<Building2 className="w-5 h-5" />}
+            icon={<Building2 className="w-4 h-4" />}
             iconBgClass="bg-accent/10 text-accent"
           />
         </div>
