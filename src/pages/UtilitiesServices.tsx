@@ -635,7 +635,7 @@ const UtilitiesServices = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && currentUtilityFilter !== 'SM' && currentUtilityFilter !== 'SSV' && (
+                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && currentUtilityFilter !== 'SM' && currentUtilityFilter !== 'SSV' && currentUtilityFilter !== 'SC' && (
                 <Select value={calculationType} onValueChange={(v) => setCalculationType(v as 'consumption' | 'value')}>
                   <SelectTrigger className="w-[150px]">
                     <Calculator className="w-4 h-4 mr-2" />
@@ -712,10 +712,17 @@ const UtilitiesServices = () => {
               </div>
             )}
 
-            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0 || currentUtilityFilter === 'AS' && asData.length > 0 || currentUtilityFilter === 'SM' && smData.length > 0 || currentUtilityFilter === 'SSV' && ssvData.length > 0) && <SummaryStats data={currentStats} />}
+            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0 || currentUtilityFilter === 'AS' && asData.length > 0 || currentUtilityFilter === 'SM' && smData.length > 0 || currentUtilityFilter === 'SSV' && ssvData.length > 0 || currentUtilityFilter === 'SC' && scData.length > 0) && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
-              {currentUtilityFilter === 'SSV' ? (
+              {currentUtilityFilter === 'SC' ? (
+                <ScTable
+                  scData={scData}
+                  isInitialized={isInitialized}
+                  isConfirmed={closedUtilities.has('SC')}
+                  onDataChange={setScData}
+                />
+              ) : currentUtilityFilter === 'SSV' ? (
                 <SsvTable
                   ssvData={ssvData}
                   isInitialized={isInitialized}
