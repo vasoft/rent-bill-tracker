@@ -42,7 +42,8 @@ const ConsumptionNotes = () => {
   useEffect(() => {
     const loadPeriods = async () => {
       const allDists = await db.distributions.toArray();
-      const periods = [...new Set(allDists.map(d => d.period))].sort().reverse();
+      const periods = [...new Set(allDists.map(d => d.period))] as string[];
+      const sorted = periods.sort().reverse();
       setAvailablePeriods(periods);
       if (periods.length > 0 && !periodFilter) {
         setPeriodFilter(periods[0]);
