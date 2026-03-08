@@ -583,8 +583,10 @@ const UtilitiesServices = () => {
   };
 
   const handleClosePeriod = async () => {
+    const closed = await closePeriod(currentPeriod);
+    if (!closed) return;
+
     await db.confirmedUtilities.where('period').equals(currentPeriod).delete();
-    await closePeriod(currentPeriod);
     setClosedUtilities(new Set());
     setCloseConfirmOpen(false);
   };
