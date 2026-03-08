@@ -146,14 +146,19 @@ const UtilitiesServices = () => {
 
   const historyStats = useMemo(() => computeStats(historyData), [historyData]);
   // Set default history period once loaded, and auto-select newest when a new period is added
+  const prevHistoricalPeriodsRef = useRef<string[]>([]);
   useEffect(() => {
     if (historicalPeriods.length > 0) {
       const newest = historicalPeriods[0];
-      if (!historyPeriodFilter || !historicalPeriods.includes(historyPeriodFilter) || newest > historyPeriodFilter) {
+      const prevNewest = prevHistoricalPeriodsRef.current[0];
+      const isNewPeriodAdded = newest !== prevNewest;
+      
+      if (!historyPeriodFilter || !historicalPeriods.includes(historyPeriodFilter) || isNewPeriodAdded) {
         setHistoryPeriodFilter(newest);
       }
     }
-  }, [historicalPeriods]);
+    prevHistoricalPeriodsRef.current = historicalPeriods;
+  }, [historicalPeriods, historyPeriodFilter]);
 
   // Load history data when filters change
   useEffect(() => {
