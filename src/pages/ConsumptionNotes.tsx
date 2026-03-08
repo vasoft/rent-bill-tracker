@@ -44,9 +44,9 @@ const ConsumptionNotes = () => {
       const allDists = await db.distributions.toArray();
       const periods = [...new Set(allDists.map(d => d.period))] as string[];
       const sorted = periods.sort().reverse();
-      setAvailablePeriods(periods);
-      if (periods.length > 0 && !periodFilter) {
-        setPeriodFilter(periods[0]);
+      setAvailablePeriods(sorted);
+      if (sorted.length > 0 && !periodFilter) {
+        setPeriodFilter(sorted[0]);
       }
     };
     loadPeriods();
