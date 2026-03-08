@@ -278,7 +278,7 @@ const UtilitiesServices = () => {
     // Only count rows where data has been recorded
     const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
-  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData, smData, ssvData]);
+  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData, smData, ssvData, scData]);
 
   // All distinct utility types present in current month data
   const activeUtilityTypes = useMemo(() => {
