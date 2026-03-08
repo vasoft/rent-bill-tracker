@@ -63,6 +63,7 @@ export interface DbSupplierInvoice {
   vatRate: number;
   vatValue: number;
   totalValue: number;
+  acSubLinesJson?: string; // JSON serialized AcSubLine[]
 }
 
 export interface DbConfirmedUtility {
@@ -80,7 +81,7 @@ class OffGusDatabase extends Dexie {
 
   constructor() {
     super('offgus-db');
-    this.version(3).stores({
+    this.version(4).stores({
       meterReadings: '++id, spaceId, utilityType, period, [spaceId+utilityType+period]',
       distributions: '++id, spaceId, clientId, utilityType, period, [clientId+period]',
       currentMonth: '++id, spaceId, clientId, utilityType, period, [spaceId+utilityType+period]',
