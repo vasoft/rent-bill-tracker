@@ -44,6 +44,7 @@ const ConsumptionNoteDocument = ({ client, period }: ConsumptionNoteDocumentProp
       SM: 'bg-purple-100 text-purple-700 border-purple-300',
       AS: 'bg-teal-100 text-teal-700 border-teal-300',
       SSV: 'bg-pink-100 text-pink-700 border-pink-300',
+      SC: 'bg-orange-100 text-orange-700 border-orange-300',
     };
     return colors[type] || 'bg-muted text-muted-foreground';
   };

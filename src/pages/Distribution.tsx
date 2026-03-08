@@ -58,6 +58,7 @@ const Distribution = () => {
       SM: 'bg-chart-sm/10 text-chart-sm border-chart-sm/30',
       AS: 'bg-chart-as/10 text-chart-as border-chart-as/30',
       SSV: 'bg-chart-sm/10 text-chart-sm border-chart-sm/30',
+      SC: 'bg-chart-sc/10 text-chart-sc border-chart-sc/30',
     };
     return colors[type] || 'bg-muted text-muted-foreground';
   };

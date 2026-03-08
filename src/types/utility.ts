@@ -1,6 +1,6 @@
 // Types for OFF-GUS Utility Management System
 
-export type UtilityType = 'EE' | 'GN' | 'AC' | 'AA' | 'SM' | 'AS' | 'SSV';
+export type UtilityType = 'EE' | 'GN' | 'AC' | 'AA' | 'SM' | 'AS' | 'SSV' | 'SC';
 
 export interface UtilityInfo {
   id: UtilityType;
@@ -124,6 +124,7 @@ export const UTILITIES: UtilityInfo[] = [
   { id: 'AS', name: 'AS', fullName: 'Apă din Subteran', unit: 'mc', color: 'chart-as', hasMeter: false },
   { id: 'SM', name: 'SM', fullName: 'Serviciul Mentenanță', unit: 'lei', color: 'chart-sm', hasMeter: false },
   { id: 'SSV', name: 'SSV', fullName: 'Serviciul Supraveghere Video', unit: 'lei', color: 'chart-sm', hasMeter: false },
+  { id: 'SC', name: 'SC', fullName: 'Serviciul de Curățenie', unit: 'lei', color: 'chart-sc', hasMeter: false },
 ];
 
 export const getUtilityInfo = (type: UtilityType): UtilityInfo => {

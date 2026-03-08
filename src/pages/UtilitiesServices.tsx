@@ -5,11 +5,13 @@ import AaTable from '@/components/utilities/AaTable';
 import AsTable from '@/components/utilities/AsTable';
 import SmTable from '@/components/utilities/SmTable';
 import SsvTable from '@/components/utilities/SsvTable';
+import ScTable from '@/components/utilities/ScTable';
 import { useAcDistribution } from '@/hooks/use-ac-distribution';
 import { useAaDistribution } from '@/hooks/use-aa-distribution';
 import { useAsDistribution } from '@/hooks/use-as-distribution';
 import { useSmDistribution } from '@/hooks/use-sm-distribution';
 import { useSsvDistribution } from '@/hooks/use-ssv-distribution';
+import { useScDistribution } from '@/hooks/use-sc-distribution';
 import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
@@ -65,6 +67,11 @@ const UtilitiesServices = () => {
   const { ssvData: ssvDistData } = useSsvDistribution(acSpaceData, currentPeriod);
   const [ssvData, setSsvData] = useState(ssvDistData);
   useEffect(() => { setSsvData(ssvDistData); }, [ssvDistData]);
+
+  // SC distribution hook (depends on A&C persons data)
+  const { scData: scDistData } = useScDistribution(acSpaceData, currentPeriod);
+  const [scData, setScData] = useState(scDistData);
+  useEffect(() => { setScData(scDistData); }, [scDistData]);
 
   // Filters
   const [historyUtilityFilter, setHistoryUtilityFilter] = useState<string>('all');
@@ -257,10 +264,21 @@ const UtilitiesServices = () => {
         totalValue: fmt(ssvData.reduce((s, r) => s + r.total, 0)),
       } as SummaryStatsData;
     }
+    if (currentUtilityFilter === 'SC') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(scData.map(r => r.spaceId)).size,
+        clientsCount: new Set(scData.map(r => r.clientId)).size,
+        totalConsumption: fmt(scData.reduce((s, r) => s + r.cantitateAlocata, 0)),
+        totalNetValue: fmt(scData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(scData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(scData.reduce((s, r) => s + r.total, 0)),
+      } as SummaryStatsData;
+    }
     // Only count rows where data has been recorded
     const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
-  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData, smData, ssvData]);
+  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData, smData, ssvData, scData]);
 
   // All distinct utility types present in current month data
   const activeUtilityTypes = useMemo(() => {
@@ -329,10 +347,21 @@ const UtilitiesServices = () => {
         totalValue: fmt(ssvData.reduce((s, r) => s + r.total, 0)),
       } as SummaryStatsData;
     }
+    if (utilityType === 'SC') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(scData.map(r => r.spaceId)).size,
+        clientsCount: new Set(scData.map(r => r.clientId)).size,
+        totalConsumption: fmt(scData.reduce((s, r) => s + r.cantitateAlocata, 0)),
+        totalNetValue: fmt(scData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(scData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(scData.reduce((s, r) => s + r.total, 0)),
+      } as SummaryStatsData;
+    }
     const rows = currentMonthData.filter(r => r.utilityType === utilityType);
     const withValues = await recalculateValues(rows, currentPeriod);
     return computeStats(withValues);
-  }, [currentMonthData, recalculateValues, currentPeriod, acSpaceData, acValueData, aaData, asData, smData, ssvData]);
+  }, [currentMonthData, recalculateValues, currentPeriod, acSpaceData, acValueData, aaData, asData, smData, ssvData, scData]);
 
   const handleConfirmUtility = async (utilityType: string) => {
     setClosingUtilityType(utilityType);
@@ -431,6 +460,7 @@ const UtilitiesServices = () => {
       SM: 'bg-chart-sm/10 text-chart-sm border-chart-sm/30',
       AS: 'bg-chart-as/10 text-chart-as border-chart-as/30',
       SSV: 'bg-chart-sm/10 text-chart-sm border-chart-sm/30',
+      SC: 'bg-chart-sc/10 text-chart-sc border-chart-sc/30',
     };
     return colors[type] || 'bg-muted text-muted-foreground';
   };
@@ -450,14 +480,14 @@ const UtilitiesServices = () => {
       case 'GN': return 'Pcs';
       case 'AC': return '-';
       case 'AA': case 'AS': return 'Csp';
-      case 'SM': case 'SSV': return 'Csp';
+      case 'SM': case 'SSV': case 'SC': return 'Csp';
       default: return 'Csp';
     }
   };
 
   const getIspLabel = (utilityType: UtilityType): string => {
     switch (utilityType) {
-      case 'SM': case 'SSV': return 'mp';
+      case 'SM': case 'SSV': case 'SC': return 'mp';
       case 'AA': case 'AS': return 'pers';
       default: return 'Isp';
     }
@@ -605,7 +635,7 @@ const UtilitiesServices = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && currentUtilityFilter !== 'SM' && currentUtilityFilter !== 'SSV' && (
+                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && currentUtilityFilter !== 'SM' && currentUtilityFilter !== 'SSV' && currentUtilityFilter !== 'SC' && (
                 <Select value={calculationType} onValueChange={(v) => setCalculationType(v as 'consumption' | 'value')}>
                   <SelectTrigger className="w-[150px]">
                     <Calculator className="w-4 h-4 mr-2" />
@@ -682,10 +712,17 @@ const UtilitiesServices = () => {
               </div>
             )}
 
-            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0 || currentUtilityFilter === 'AS' && asData.length > 0 || currentUtilityFilter === 'SM' && smData.length > 0 || currentUtilityFilter === 'SSV' && ssvData.length > 0) && <SummaryStats data={currentStats} />}
+            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0 || currentUtilityFilter === 'AS' && asData.length > 0 || currentUtilityFilter === 'SM' && smData.length > 0 || currentUtilityFilter === 'SSV' && ssvData.length > 0 || currentUtilityFilter === 'SC' && scData.length > 0) && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
-              {currentUtilityFilter === 'SSV' ? (
+              {currentUtilityFilter === 'SC' ? (
+                <ScTable
+                  scData={scData}
+                  isInitialized={isInitialized}
+                  isConfirmed={closedUtilities.has('SC')}
+                  onDataChange={setScData}
+                />
+              ) : currentUtilityFilter === 'SSV' ? (
                 <SsvTable
                   ssvData={ssvData}
                   isInitialized={isInitialized}
