@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { suppliers as initialSuppliers } from '@/data/mockData';
 import { db } from '@/lib/db';
-import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo } from '@/types/utility';
-import { 
+import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo, AcSubLine } from '@/types/utility';
+import { type InvoiceFormSubmitData } from '@/components/invoices/InvoiceForm';
+import {
   Table, 
   TableBody, 
   TableCell, 
@@ -55,6 +56,7 @@ const Invoices = () => {
         vatRate: inv.vatRate,
         vatValue: inv.vatValue,
         totalValue: inv.totalValue,
+        acSubLines: inv.acSubLinesJson ? JSON.parse(inv.acSubLinesJson) as AcSubLine[] : undefined,
       })));
     });
   }, []);
@@ -107,17 +109,7 @@ const Invoices = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = async (data: {
-    invoiceNumber: string;
-    supplierId: string;
-    utilityType: string;
-    period: string;
-    totalConsumption: number;
-    netValueTaxable: number;
-    netValueExempt: number;
-    vatRate: number;
-    vatValue: number;
-  }) => {
+  const handleFormSubmit = async (data: InvoiceFormSubmitData) => {
     const externalId = `INV${Date.now()}`;
     const netValue = data.netValueTaxable + data.netValueExempt;
     const newInvoice: SupplierInvoice = {
@@ -134,6 +126,7 @@ const Invoices = () => {
       vatRate: data.vatRate,
       vatValue: data.vatValue,
       totalValue: netValue + data.vatValue,
+      acSubLines: data.acSubLines,
     };
     await db.supplierInvoices.add({
       externalId,
@@ -149,6 +142,7 @@ const Invoices = () => {
       vatRate: data.vatRate,
       vatValue: data.vatValue,
       totalValue: newInvoice.totalValue,
+      acSubLinesJson: data.acSubLines ? JSON.stringify(data.acSubLines) : undefined,
     });
     setInvoicesList(prev => [...prev, newInvoice]);
   };

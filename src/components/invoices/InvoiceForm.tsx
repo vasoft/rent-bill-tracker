@@ -27,13 +27,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { SupplierInvoice, Supplier, UTILITIES, UtilityType, UtilityInfo } from '@/types/utility';
+import { SupplierInvoice, Supplier, UtilityType, UtilityInfo, AcSubLine, AC_SUB_SERVICES } from '@/types/utility';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 const parsePeriodInput = (input: string): string | null => {
-  // Accept MM.YY or MM.YYYY
   const match = input.match(/^(\d{1,2})[.\-/](\d{2,4})$/);
   if (!match) return null;
   const month = parseInt(match[1], 10);
@@ -64,6 +63,10 @@ const invoiceSchema = z.object({
 
 type InvoiceValues = z.infer<typeof invoiceSchema>;
 
+export interface InvoiceFormSubmitData extends InvoiceValues {
+  acSubLines?: AcSubLine[];
+}
+
 interface InvoiceFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -72,10 +75,23 @@ interface InvoiceFormProps {
   suppliers: Supplier[];
   utilities: UtilityInfo[];
   existingPeriods: string[];
-  onSubmit: (data: InvoiceValues) => void;
+  onSubmit: (data: InvoiceFormSubmitData) => void;
   onAddSupplier: (supplier: Omit<Supplier, 'id'>) => Supplier;
   onAddUtility: (utility: Omit<UtilityInfo, 'id'>) => UtilityInfo;
 }
+
+const createDefaultAcSubLines = (): AcSubLine[] =>
+  AC_SUB_SERVICES.map(s => ({
+    code: s.code,
+    name: s.name,
+    consumption: 0,
+    unit: s.unit,
+    hasMeter: s.hasMeter,
+    netValue: 0,
+    vatRate: s.defaultVatRate,
+    vatValue: 0,
+    totalValue: 0,
+  }));
 
 const InvoiceForm = ({
   open,
@@ -89,7 +105,6 @@ const InvoiceForm = ({
   onAddSupplier,
   onAddUtility,
 }: InvoiceFormProps) => {
-  // States for adding new supplier/utility
   const [showAddSupplier, setShowAddSupplier] = useState(false);
   const [showAddUtility, setShowAddUtility] = useState(false);
   const [newSupplierName, setNewSupplierName] = useState('');
@@ -98,6 +113,8 @@ const InvoiceForm = ({
   const [newUtilityName, setNewUtilityName] = useState('');
   const [newUtilityUnit, setNewUtilityUnit] = useState('');
   const [newUtilityHasMeter, setNewUtilityHasMeter] = useState(false);
+  const [acSubLines, setAcSubLines] = useState<AcSubLine[]>(createDefaultAcSubLines());
+
   const form = useForm<InvoiceValues>({
     resolver: zodResolver(invoiceSchema),
     defaultValues: {
@@ -108,10 +125,13 @@ const InvoiceForm = ({
       totalConsumption: 0,
       netValueTaxable: 0,
       netValueExempt: 0,
-      vatRate: 21,
+      vatRate: 9,
       vatValue: 0,
     },
   });
+
+  const watchedUtilityType = form.watch('utilityType');
+  const isAC = watchedUtilityType === 'AC';
 
   const netValueTaxable = form.watch('netValueTaxable');
   const netValueExempt = form.watch('netValueExempt');
@@ -120,17 +140,52 @@ const InvoiceForm = ({
   const netValue = (Number(netValueTaxable) || 0) + (Number(netValueExempt) || 0);
   const totalValue = netValue + (Number(vatValue) || 0);
 
-  // Auto-calculate TVA when netValueTaxable or vatRate changes
+  // Auto-calculate TVA for non-AC invoices
   useEffect(() => {
+    if (isAC) return;
     const taxable = Number(netValueTaxable) || 0;
     const rate = Number(vatRate) || 0;
     const calculatedVat = Math.round(taxable * rate / 100 * 100) / 100;
     form.setValue('vatValue', calculatedVat);
-  }, [netValueTaxable, vatRate, form]);
+  }, [netValueTaxable, vatRate, form, isAC]);
+
+  // For AC: sync totals from sub-lines
+  const updateAcTotals = (lines: AcSubLine[]) => {
+    const totalCons = lines.reduce((s, l) => s + l.consumption, 0);
+    const totalNet = lines.reduce((s, l) => s + l.netValue, 0);
+    const totalVat = lines.reduce((s, l) => s + l.vatValue, 0);
+    const netTaxable = lines.filter(l => l.vatRate > 0).reduce((s, l) => s + l.netValue, 0);
+    const netExempt = lines.filter(l => l.vatRate === 0).reduce((s, l) => s + l.netValue, 0);
+
+    form.setValue('totalConsumption', totalCons);
+    form.setValue('netValueTaxable', netTaxable);
+    form.setValue('netValueExempt', netExempt);
+    form.setValue('vatValue', totalVat);
+    // Use the dominant vatRate (from the first taxable sub-line)
+    const firstTaxable = lines.find(l => l.vatRate > 0);
+    if (firstTaxable) form.setValue('vatRate', firstTaxable.vatRate);
+  };
+
+  const handleAcSubLineChange = (index: number, field: keyof AcSubLine, value: number) => {
+    setAcSubLines(prev => {
+      const updated = [...prev];
+      const line = { ...updated[index] };
+      (line as any)[field] = value;
+
+      // Auto-calc vatValue and totalValue
+      if (field === 'netValue' || field === 'vatRate') {
+        line.vatValue = Math.round(line.netValue * line.vatRate / 100 * 100) / 100;
+      }
+      line.totalValue = line.netValue + line.vatValue;
+
+      updated[index] = line;
+      updateAcTotals(updated);
+      return updated;
+    });
+  };
 
   useEffect(() => {
     if (open) {
-      // Reset add states
       setShowAddSupplier(false);
       setShowAddUtility(false);
       setNewSupplierName('');
@@ -152,6 +207,7 @@ const InvoiceForm = ({
           vatRate: invoice.vatRate,
           vatValue: invoice.vatValue,
         });
+        setAcSubLines(invoice.acSubLines || createDefaultAcSubLines());
       } else if (mode === 'add') {
         const currentDate = new Date();
         const currentPeriod = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
@@ -163,9 +219,10 @@ const InvoiceForm = ({
           totalConsumption: 0,
           netValueTaxable: 0,
           netValueExempt: 0,
-          vatRate: 21,
+          vatRate: 9,
           vatValue: 0,
         });
+        setAcSubLines(createDefaultAcSubLines());
       }
     }
   }, [open, mode, invoice, form]);
@@ -204,7 +261,10 @@ const InvoiceForm = ({
   };
 
   const handleSubmit = (data: InvoiceValues) => {
-    onSubmit(data);
+    onSubmit({
+      ...data,
+      acSubLines: isAC ? acSubLines : undefined,
+    });
     onOpenChange(false);
   };
 
@@ -227,12 +287,16 @@ const InvoiceForm = ({
     return date.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
   };
 
-  const selectedSupplier = suppliers.find(s => s.id === form.watch('supplierId'));
-  const selectedUtility = utilities.find(u => u.id === form.watch('utilityType'));
+  const selectedUtility = utilities.find(u => u.id === watchedUtilityType);
+
+  // AC sub-lines totals for summary
+  const acTotalNet = acSubLines.reduce((s, l) => s + l.netValue, 0);
+  const acTotalVat = acSubLines.reduce((s, l) => s + l.vatValue, 0);
+  const acTotalValue = acSubLines.reduce((s, l) => s + l.totalValue, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {mode === 'add' ? 'Adaugă Factură Furnizor' : 'Detalii Factură'}
@@ -477,7 +541,6 @@ const InvoiceForm = ({
                           onBlur={(e) => {
                             const parsed = parsePeriodInput(e.target.value);
                             if (!parsed && e.target.value !== '') {
-                              // Reset to last valid value
                               e.target.value = formatPeriodToInput(field.value);
                             }
                           }}
@@ -514,161 +577,252 @@ const InvoiceForm = ({
               )}
             />
 
-            {/* Consumption */}
-            <FormField
-              control={form.control}
-              name="totalConsumption"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Consum {selectedUtility ? `(${selectedUtility.unit})` : ''}
-                  </FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
-                      disabled={mode === 'view'}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* === AC Sub-Lines Section === */}
+            {isAC ? (
+              <div className="space-y-3">
+                <h4 className="text-sm font-semibold text-foreground">Servicii A&C</h4>
+                {acSubLines.map((line, idx) => (
+                  <div key={line.code} className="p-3 border rounded-lg bg-muted/20 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">{line.name}</span>
+                      <div className="flex items-center gap-2">
+                        {line.hasMeter && (
+                          <Badge variant="outline" className="text-xs">contor</Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs">
+                          TVA {line.vatRate}%
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Consum ({line.unit})</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={line.consumption || ''}
+                          onChange={(e) => handleAcSubLineChange(idx, 'consumption', Number(e.target.value) || 0)}
+                          disabled={mode === 'view'}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Val. Netă (lei)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={line.netValue || ''}
+                          onChange={(e) => handleAcSubLineChange(idx, 'netValue', Number(e.target.value) || 0)}
+                          disabled={mode === 'view'}
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">TVA (lei)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={line.vatValue || ''}
+                          disabled
+                          className="bg-muted/50"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <span className="text-xs text-muted-foreground">
+                        Total: <span className="font-medium text-foreground">
+                          {line.totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
 
-            {/* VAT Rate */}
-            <FormField
-              control={form.control}
-              name="vatRate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cotă TVA (%)</FormLabel>
-                  <Select 
-                    onValueChange={(val) => field.onChange(Number(val))} 
-                    value={String(field.value)}
-                    disabled={mode === 'view'}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="21">21%</SelectItem>
-                      <SelectItem value="11">11%</SelectItem>
-                      <SelectItem value="9">9%</SelectItem>
-                      <SelectItem value="5">5%</SelectItem>
-                      <SelectItem value="0">0%</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Net Value Taxable + TVA auto-calculated */}
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="netValueTaxable"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Val. Netă Taxabilă (lei)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        type="number"
-                        step="0.01"
-                        placeholder="0"
-                        disabled={mode === 'view'}
-                      />
-                    </FormControl>
-                    <p className="text-xs text-muted-foreground">
-                      Cotă TVA {vatRate}%
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="vatValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>TVA Calculat (lei)</FormLabel>
-                    <FormControl>
-                      <Input 
-                        {...field} 
-                        type="number"
-                        step="0.01"
-                        placeholder="0"
-                        disabled
-                        className="bg-muted/50"
-                      />
-                    </FormControl>
-                    <p className="text-xs text-muted-foreground">
-                      Auto: {Number(netValueTaxable || 0).toLocaleString('ro-RO')} × {vatRate}%
-                    </p>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Net Value Exempt (0% TVA) */}
-            <FormField
-              control={form.control}
-              name="netValueExempt"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Val. Netă Scutită TVA (lei)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      {...field} 
-                      type="number"
-                      step="0.01"
-                      placeholder="0"
-                      disabled={mode === 'view'}
-                    />
-                  </FormControl>
-                  <p className="text-xs text-muted-foreground">
-                    Servicii cu cotă TVA 0%
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Total - calculated */}
-            <div className="p-4 bg-muted rounded-lg space-y-2">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Valoare Netă Taxabilă:</span>
-                <span>{(Number(netValueTaxable) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
-              </div>
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">TVA ({vatRate}%):</span>
-                <span>{(Number(vatValue) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
-              </div>
-              {(Number(netValueExempt) || 0) > 0 && (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-muted-foreground">Valoare Netă Scutită:</span>
-                  <span>{(Number(netValueExempt) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
+                {/* AC Summary */}
+                <div className="p-4 bg-muted rounded-lg space-y-2">
+                  {acSubLines.map(line => (
+                    <div key={line.code} className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">{line.name}:</span>
+                      <span>{line.totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei</span>
+                    </div>
+                  ))}
+                  <Separator />
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Total Net:</span>
+                    <span className="font-medium">{acTotalNet.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Total TVA:</span>
+                    <span>{acTotalVat.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Total Factură A&C:</span>
+                    <span className="text-xl font-bold text-primary">
+                      {acTotalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
+                    </span>
+                  </div>
                 </div>
-              )}
-              <Separator />
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Total Net:</span>
-                <span className="font-medium">{netValue.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Total Factură:</span>
-                <span className="text-xl font-bold text-primary">
-                  {totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei
-                </span>
-              </div>
-            </div>
+            ) : (
+              <>
+                {/* Standard fields for non-AC invoices */}
+                {/* Consumption */}
+                <FormField
+                  control={form.control}
+                  name="totalConsumption"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Consum {selectedUtility ? `(${selectedUtility.unit})` : ''}
+                      </FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          disabled={mode === 'view'}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* VAT Rate */}
+                <FormField
+                  control={form.control}
+                  name="vatRate"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cotă TVA (%)</FormLabel>
+                      <Select 
+                        onValueChange={(val) => field.onChange(Number(val))} 
+                        value={String(field.value)}
+                        disabled={mode === 'view'}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="21">21%</SelectItem>
+                          <SelectItem value="11">11%</SelectItem>
+                          <SelectItem value="9">9%</SelectItem>
+                          <SelectItem value="5">5%</SelectItem>
+                          <SelectItem value="0">0%</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Net Value Taxable + TVA */}
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="netValueTaxable"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Val. Netă Taxabilă (lei)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            disabled={mode === 'view'}
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Cotă TVA {vatRate}%
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="vatValue"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>TVA Calculat (lei)</FormLabel>
+                        <FormControl>
+                          <Input 
+                            {...field} 
+                            type="number"
+                            step="0.01"
+                            placeholder="0"
+                            disabled
+                            className="bg-muted/50"
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Auto: {Number(netValueTaxable || 0).toLocaleString('ro-RO')} × {vatRate}%
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Net Value Exempt */}
+                <FormField
+                  control={form.control}
+                  name="netValueExempt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Val. Netă Scutită TVA (lei)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          {...field} 
+                          type="number"
+                          step="0.01"
+                          placeholder="0"
+                          disabled={mode === 'view'}
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground">
+                        Servicii cu cotă TVA 0%
+                      </p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Total summary */}
+                <div className="p-4 bg-muted rounded-lg space-y-2">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Valoare Netă Taxabilă:</span>
+                    <span>{(Number(netValueTaxable) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">TVA ({vatRate}%):</span>
+                    <span>{(Number(vatValue) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
+                  </div>
+                  {(Number(netValueExempt) || 0) > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Valoare Netă Scutită:</span>
+                      <span>{(Number(netValueExempt) || 0).toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted-foreground">Total Net:</span>
+                    <span className="font-medium">{netValue.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium">Total Factură:</span>
+                    <span className="text-xl font-bold text-primary">
+                      {totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} lei
+                    </span>
+                  </div>
+                </div>
+              </>
+            )}
 
             <DialogFooter>
               <Button 

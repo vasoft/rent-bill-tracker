@@ -66,6 +66,7 @@ export interface SupplierInvoice {
   vatRate: number;
   vatValue: number;
   totalValue: number;
+  acSubLines?: AcSubLine[]; // Sub-linii pentru factura A&C
 }
 
 export interface ConsumptionDistribution {
@@ -128,3 +129,23 @@ export const UTILITIES: UtilityInfo[] = [
 export const getUtilityInfo = (type: UtilityType): UtilityInfo => {
   return UTILITIES.find(u => u.id === type) || UTILITIES[0];
 };
+
+// AC Sub-services (fixed structure for Apă & Canalizare invoices)
+export interface AcSubLine {
+  code: string;        // AC-AA, AC-CN, AC-AM, AC-TX
+  name: string;
+  consumption: number;
+  unit: string;
+  hasMeter: boolean;
+  netValue: number;
+  vatRate: number;
+  vatValue: number;
+  totalValue: number;
+}
+
+export const AC_SUB_SERVICES = [
+  { code: 'AC-AA', name: 'Alimentare Apă', unit: 'mc', hasMeter: true, defaultVatRate: 9 },
+  { code: 'AC-CN', name: 'Canalizare', unit: 'mc', hasMeter: true, defaultVatRate: 9 },
+  { code: 'AC-AM', name: 'Ape Meteorice', unit: 'mc', hasMeter: false, defaultVatRate: 9 },
+  { code: 'AC-TX', name: 'Taxă', unit: 'lei', hasMeter: false, defaultVatRate: 0 },
+] as const;
