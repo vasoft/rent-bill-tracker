@@ -22,7 +22,17 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { Plus, Search, FileText, Eye } from 'lucide-react';
+import { Plus, Search, FileText, Eye, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import InvoiceForm from '@/components/invoices/InvoiceForm';
 
 const Invoices = () => {
@@ -34,6 +44,7 @@ const Invoices = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'add' | 'view'>('add');
   const [selectedInvoice, setSelectedInvoice] = useState<SupplierInvoice | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SupplierInvoice | null>(null);
 
   // Load invoices from Dexie on mount
   useEffect(() => {
@@ -107,6 +118,16 @@ const Invoices = () => {
     setSelectedInvoice(invoice);
     setFormMode('view');
     setFormOpen(true);
+  };
+
+
+  const handleDeleteInvoice = async (invoice: SupplierInvoice) => {
+    const dbRecord = await db.supplierInvoices.where('externalId').equals(invoice.id).first();
+    if (dbRecord) {
+      await db.supplierInvoices.delete(dbRecord.id!);
+    }
+    setInvoicesList(prev => prev.filter(inv => inv.id !== invoice.id));
+    setDeleteTarget(null);
   };
 
   const handleFormSubmit = async (data: InvoiceFormSubmitData) => {
@@ -280,14 +301,25 @@ const Invoices = () => {
                     {invoice.totalValue.toLocaleString('ro-RO')} lei
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleViewClick(invoice)}
-                      title="Vizualizează factura"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleViewClick(invoice)}
+                        title="Vizualizează factura"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => setDeleteTarget(invoice)}
+                        title="Șterge factura"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -308,6 +340,27 @@ const Invoices = () => {
           onAddSupplier={handleAddSupplier}
           onAddUtility={handleAddUtility}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Șterge factura?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Ești sigur că vrei să ștergi factura <strong>{deleteTarget?.invoiceNumber}</strong>? Această acțiune nu poate fi anulată.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Anulează</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deleteTarget && handleDeleteInvoice(deleteTarget)}
+              >
+                Șterge
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MainLayout>
   );
