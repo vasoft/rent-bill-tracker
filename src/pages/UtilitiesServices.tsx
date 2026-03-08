@@ -40,6 +40,11 @@ const UtilitiesServices = () => {
   // AC distribution hook
   const { acSpaceData, acValueData, acSubLines } = useAcDistribution(currentMonthData, currentPeriod);
 
+  // AA distribution hook (depends on A&C data)
+  const { aaData: aaDistData } = useAaDistribution(acSpaceData, currentPeriod);
+  const [aaData, setAaData] = useState(aaDistData);
+  useEffect(() => { setAaData(aaDistData); }, [aaDistData]);
+
   // Filters
   const [historyUtilityFilter, setHistoryUtilityFilter] = useState<string>('all');
   const [historyPeriodFilter, setHistoryPeriodFilter] = useState<string>('');
