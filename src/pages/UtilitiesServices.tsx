@@ -766,8 +766,8 @@ const UtilitiesServices = () => {
                       <TableHead>Spațiu</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Utilitate/Serviciu</TableHead>
-                      <TableHead className="text-right">Index Vechi / Isp</TableHead>
-                      <TableHead className="text-right">Index Nou / Csp</TableHead>
+                      <TableHead className="text-right">Index Vechi</TableHead>
+                      <TableHead className="text-right">Index Nou</TableHead>
                       <TableHead className="text-right">Const/Pcs/Cotă</TableHead>
                       <TableHead className="text-right">Consum</TableHead>
                       <TableHead className="w-[60px]">Acțiuni</TableHead>
