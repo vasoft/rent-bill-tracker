@@ -1041,6 +1041,18 @@ const UtilitiesServices = () => {
                         </TableRow>
                       ))
                     )}
+                    {isInitialized && liveCurrentMonthData.length > 0 && (() => {
+                      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+                      const totalConsumption = liveCurrentMonthData.reduce((s, r) => s + r.consumption, 0);
+                      const unit = liveCurrentMonthData[0]?.utilityType === 'GN' ? 'kWh' : liveCurrentMonthData[0]?.unit || '';
+                      return (
+                        <TableRow className="font-semibold bg-muted/50">
+                          <TableCell colSpan={6} className="text-right">TOTAL</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(totalConsumption)} {unit}</TableCell>
+                          <TableCell />
+                        </TableRow>
+                      );
+                    })()}
                   </TableBody>
                 </Table>
               ) : (
@@ -1104,6 +1116,23 @@ const UtilitiesServices = () => {
                         </TableRow>
                       ))
                     )}
+                    {isInitialized && filteredCurrentMonthData.length > 0 && (() => {
+                      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+                      const totalConsumption = filteredCurrentMonthData.reduce((s, r) => s + r.consumption, 0);
+                      const totalNet = filteredCurrentMonthData.reduce((s, r) => s + r.netValue, 0);
+                      const totalVat = filteredCurrentMonthData.reduce((s, r) => s + r.vatValue, 0);
+                      const totalVal = filteredCurrentMonthData.reduce((s, r) => s + r.totalValue, 0);
+                      const unit = filteredCurrentMonthData[0]?.utilityType === 'GN' ? 'kWh' : filteredCurrentMonthData[0]?.unit || '';
+                      return (
+                        <TableRow className="font-semibold bg-muted/50">
+                          <TableCell colSpan={3} className="text-right">TOTAL</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(totalConsumption)} {unit}</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(totalNet)} lei</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(totalVat)} lei</TableCell>
+                          <TableCell className="text-right font-mono">{fmt(totalVal)} lei</TableCell>
+                        </TableRow>
+                      );
+                    })()}
                   </TableBody>
                 </Table>
               )}
