@@ -1433,6 +1433,40 @@ const UtilitiesServices = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Archive Confirmation Dialog */}
+        <Dialog open={deleteArchiveConfirmOpen} onOpenChange={setDeleteArchiveConfirmOpen}>
+          <DialogContent className="sm:max-w-[450px]">
+            <DialogHeader>
+              <DialogTitle>Ștergere Arhivă</DialogTitle>
+              <DialogDescription>
+                Sunteți sigur că doriți să ștergeți arhiva pentru <strong>{formatPeriod(historyPeriodFilter)}</strong>? 
+                Toate distribuțiile și citirile de contor pentru această perioadă vor fi șterse definitiv. 
+                Perioada va deveni disponibilă pentru reinițializare în Luna de Consum.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteArchiveConfirmOpen(false)}>Anulează</Button>
+              <Button variant="destructive" onClick={async () => {
+                const success = await deleteArchivedPeriod(historyPeriodFilter);
+                if (success) {
+                  setDeleteArchiveConfirmOpen(false);
+                  setHistoryData([]);
+                  // Select next available period
+                  const remaining = historicalPeriods.filter(p => p !== historyPeriodFilter);
+                  if (remaining.length > 0) {
+                    setHistoryPeriodFilter(remaining[0]);
+                  } else {
+                    setHistoryPeriodFilter('');
+                  }
+                }
+              }}>
+                <Trash2 className="w-4 h-4 mr-2" />
+                Șterge Definitiv
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
