@@ -480,14 +480,14 @@ const UtilitiesServices = () => {
       case 'GN': return 'Pcs';
       case 'AC': return '-';
       case 'AA': case 'AS': return 'Csp';
-      case 'SM': case 'SSV': return 'Csp';
+      case 'SM': case 'SSV': case 'SC': return 'Csp';
       default: return 'Csp';
     }
   };
 
   const getIspLabel = (utilityType: UtilityType): string => {
     switch (utilityType) {
-      case 'SM': case 'SSV': return 'mp';
+      case 'SM': case 'SSV': case 'SC': return 'mp';
       case 'AA': case 'AS': return 'pers';
       default: return 'Isp';
     }
