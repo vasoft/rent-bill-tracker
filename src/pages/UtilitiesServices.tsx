@@ -240,15 +240,27 @@ const UtilitiesServices = () => {
 
   const handleSaveIndex = async () => {
     if (!editingRow || !editingRow.dbId) return;
-    const newIndexNew = parseFloat(editIndexNew) || 0;
-    await updateReading(
-      editingRow.id,
-      editingRow.dbId,
-      editingRow.indexOld,
-      newIndexNew,
-      editingRow.constant,
-      editingRow.utilityType
-    );
+    const utility = UTILITIES.find(u => u.id === editingRow.utilityType);
+    if (utility && !utility.hasMeter) {
+      await updateReading(
+        editingRow.id,
+        editingRow.dbId,
+        0, 0, 0,
+        editingRow.utilityType,
+        editingRow.isp,
+        editingRow.csp
+      );
+    } else {
+      const newIndexNew = parseFloat(editIndexNew) || 0;
+      await updateReading(
+        editingRow.id,
+        editingRow.dbId,
+        editingRow.indexOld,
+        newIndexNew,
+        editingRow.constant,
+        editingRow.utilityType
+      );
+    }
     setEditDialogOpen(false);
     setEditingRow(null);
   };
