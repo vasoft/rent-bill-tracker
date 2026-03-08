@@ -88,7 +88,7 @@ export function useAcDistribution(currentMonthData: CurrentMonthRow[], currentPe
         clientId: r.client?.id || '',
         clientName: r.client?.name || 'Necunoscut',
         persons: r.space.persons,
-        hasMeter: r.hasMeter,
+        hasMeter: false,
         alimentareApa,
         canalizare,
         apeMeteorie,
