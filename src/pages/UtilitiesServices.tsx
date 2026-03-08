@@ -288,6 +288,23 @@ const UtilitiesServices = () => {
         totalValue: fmt(scData.reduce((s, r) => s + r.total, 0)),
       } as SummaryStatsData;
     }
+
+    // Utility selected (EE/GN etc.) - compute only for selected utility
+    if (currentUtilityFilter !== 'all') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      const consumptionRows = liveCurrentMonthData.filter(r => r.utilityType === currentUtilityFilter);
+      const valueRows = recalculatedData.filter(r => r.utilityType === currentUtilityFilter);
+
+      return {
+        spacesCount: new Set(consumptionRows.map(r => r.spaceId)).size,
+        clientsCount: new Set(consumptionRows.map(r => r.clientId)).size,
+        totalConsumption: fmt(consumptionRows.reduce((s, r) => s + r.consumption, 0)),
+        totalNetValue: fmt(valueRows.reduce((s, r) => s + r.netValue, 0)),
+        totalVat: fmt(valueRows.reduce((s, r) => s + r.vatValue, 0)),
+        totalValue: fmt(valueRows.reduce((s, r) => s + r.totalValue, 0)),
+      } as SummaryStatsData;
+    }
+
     // "All utilities" - aggregate from all sources
     const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
     
