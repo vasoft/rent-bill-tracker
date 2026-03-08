@@ -54,6 +54,7 @@ const History = () => {
     SM: '#8B5CF6',
     AS: '#14B8A6',
     SSV: '#EC4899',
+    SC: '#F59E0B',
   };
 
   const calculateTrend = (utilityType?: UtilityType) => {
