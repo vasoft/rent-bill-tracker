@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { suppliers as initialSuppliers } from '@/data/mockData';
 import { db } from '@/lib/db';
-import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo } from '@/types/utility';
-import { 
+import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo, AcSubLine } from '@/types/utility';
+import { type InvoiceFormSubmitData } from '@/components/invoices/InvoiceForm';
   Table, 
   TableBody, 
   TableCell, 
@@ -55,6 +55,7 @@ const Invoices = () => {
         vatRate: inv.vatRate,
         vatValue: inv.vatValue,
         totalValue: inv.totalValue,
+        acSubLines: inv.acSubLinesJson ? JSON.parse(inv.acSubLinesJson) as AcSubLine[] : undefined,
       })));
     });
   }, []);
