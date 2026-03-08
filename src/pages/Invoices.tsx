@@ -109,17 +109,7 @@ const Invoices = () => {
     setFormOpen(true);
   };
 
-  const handleFormSubmit = async (data: {
-    invoiceNumber: string;
-    supplierId: string;
-    utilityType: string;
-    period: string;
-    totalConsumption: number;
-    netValueTaxable: number;
-    netValueExempt: number;
-    vatRate: number;
-    vatValue: number;
-  }) => {
+  const handleFormSubmit = async (data: InvoiceFormSubmitData) => {
     const externalId = `INV${Date.now()}`;
     const netValue = data.netValueTaxable + data.netValueExempt;
     const newInvoice: SupplierInvoice = {
@@ -136,6 +126,7 @@ const Invoices = () => {
       vatRate: data.vatRate,
       vatValue: data.vatValue,
       totalValue: netValue + data.vatValue,
+      acSubLines: data.acSubLines,
     };
     await db.supplierInvoices.add({
       externalId,
@@ -151,6 +142,7 @@ const Invoices = () => {
       vatRate: data.vatRate,
       vatValue: data.vatValue,
       totalValue: newInvoice.totalValue,
+      acSubLinesJson: data.acSubLines ? JSON.stringify(data.acSubLines) : undefined,
     });
     setInvoicesList(prev => [...prev, newInvoice]);
   };
