@@ -793,10 +793,6 @@ const UtilitiesServices = () => {
                 )}
               </div>
             )}
-                  )}
-                </div>
-              </div>
-            )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Anulează</Button>
               <Button onClick={handleSaveIndex}>Salvează</Button>
