@@ -381,10 +381,16 @@ const UtilitiesServices = () => {
     } as SummaryStatsData;
   }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData, smData, ssvData, scData, recalculatedData]);
 
-  // All distinct utility types present in current month data
+  // All distinct utility types present in current month data (including separate-state utilities)
   const activeUtilityTypes = useMemo(() => {
-    return [...new Set(currentMonthData.map(r => r.utilityType))];
-  }, [currentMonthData]);
+    const types = new Set(currentMonthData.map(r => r.utilityType));
+    if (aaData.length > 0) types.add('AA' as UtilityType);
+    if (asData.length > 0) types.add('AS' as UtilityType);
+    if (smData.length > 0) types.add('SM' as UtilityType);
+    if (ssvData.length > 0) types.add('SSV' as UtilityType);
+    if (scData.length > 0) types.add('SC' as UtilityType);
+    return [...types];
+  }, [currentMonthData, aaData, asData, smData, ssvData, scData]);
 
   // Check if all active utilities have been confirmed closed
   const allUtilitiesClosed = useMemo(() => {
