@@ -554,7 +554,7 @@ const UtilitiesServices = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && (
+                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && currentUtilityFilter !== 'SM' && (
                 <Select value={calculationType} onValueChange={(v) => setCalculationType(v as 'consumption' | 'value')}>
                   <SelectTrigger className="w-[150px]">
                     <Calculator className="w-4 h-4 mr-2" />
