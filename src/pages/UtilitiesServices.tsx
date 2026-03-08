@@ -172,10 +172,23 @@ const UtilitiesServices = () => {
   }, [filteredCurrentMonthData, editDialogOpen, editingRow, editIndexNew]);
 
   const currentStats = useMemo(() => {
+    // For AC filter, use acValueData/acSpaceData instead of currentMonthData rows
+    if (currentUtilityFilter === 'AC') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      const vData = acValueData;
+      return {
+        spacesCount: new Set(acSpaceData.map(r => r.spaceId)).size,
+        clientsCount: new Set(acSpaceData.map(r => r.clientId)).size,
+        totalConsumption: fmt(acSpaceData.reduce((s, r) => s + r.consumTotal, 0)),
+        totalNetValue: fmt(vData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(vData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(vData.reduce((s, r) => s + r.valoareTotala, 0)),
+      } as SummaryStatsData;
+    }
     // Only count rows where data has been recorded
     const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
-  }, [liveCurrentMonthData]);
+  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData]);
 
   // All distinct utility types present in current month data
   const activeUtilityTypes = useMemo(() => {
