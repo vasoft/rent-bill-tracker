@@ -585,16 +585,8 @@ const InvoiceForm = ({
                   <div key={line.code} className="p-3 border rounded-lg bg-muted/20 space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium">{line.name}</span>
-                      <div className="flex items-center gap-2">
-                        {line.hasMeter && (
-                          <Badge variant="outline" className="text-xs">contor</Badge>
-                        )}
-                        <Badge variant="outline" className="text-xs">
-                          TVA {line.vatRate}%
-                        </Badge>
-                      </div>
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-4 gap-2">
                       <div>
                         <label className="text-xs text-muted-foreground">Consum ({line.unit})</label>
                         <Input
@@ -616,6 +608,24 @@ const InvoiceForm = ({
                           disabled={mode === 'view'}
                           placeholder="0"
                         />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">TVA %</label>
+                        <Select
+                          value={String(line.vatRate)}
+                          onValueChange={(val) => handleAcSubLineChange(idx, 'vatRate', Number(val))}
+                          disabled={mode === 'view'}
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="19">19%</SelectItem>
+                            <SelectItem value="9">9%</SelectItem>
+                            <SelectItem value="5">5%</SelectItem>
+                            <SelectItem value="0">0%</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <label className="text-xs text-muted-foreground">TVA (lei)</label>
