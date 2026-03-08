@@ -653,10 +653,17 @@ const UtilitiesServices = () => {
               </div>
             )}
 
-            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0 || currentUtilityFilter === 'AS' && asData.length > 0) && <SummaryStats data={currentStats} />}
+            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0 || currentUtilityFilter === 'AS' && asData.length > 0 || currentUtilityFilter === 'SM' && smData.length > 0) && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
-              {currentUtilityFilter === 'AS' ? (
+              {currentUtilityFilter === 'SM' ? (
+                <SmTable
+                  smData={smData}
+                  isInitialized={isInitialized}
+                  isConfirmed={closedUtilities.has('SM')}
+                  onDataChange={setSmData}
+                />
+              ) : currentUtilityFilter === 'AS' ? (
                 <AsTable
                   asData={asData}
                   isInitialized={isInitialized}
