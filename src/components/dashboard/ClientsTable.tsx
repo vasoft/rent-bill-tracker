@@ -34,15 +34,10 @@ const ClientsTable = ({ data, periodLabel }: ClientsTableProps) => {
     return value.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // Only show utility columns that have data
-  const activeUtilities = UTILITIES.filter(u =>
-    data.some(client => (client.byUtility[u.id] || 0) > 0)
-  );
-
   return (
     <div className="utility-card overflow-hidden">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Consumuri pe Clienți</h3>
+        <h3 className="font-semibold text-foreground">Costuri pe Clienți</h3>
         <Badge variant="secondary" className="text-xs">{periodLabel}</Badge>
       </div>
       <div className="overflow-x-auto -mx-5 px-5">
@@ -50,9 +45,9 @@ const ClientsTable = ({ data, periodLabel }: ClientsTableProps) => {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-semibold">Client</TableHead>
-              {activeUtilities.map(u => (
-                <TableHead key={u.id} className={`text-right font-semibold ${UTILITY_COLORS[u.id]}`}>
-                  {u.name}
+              {UTILITIES.map(u => (
+                <TableHead key={u.id} className={`text-right font-semibold text-xs ${UTILITY_COLORS[u.id]}`}>
+                  {u.id}
                 </TableHead>
               ))}
               <TableHead className="text-right font-semibold">TOTAL</TableHead>
@@ -72,8 +67,8 @@ const ClientsTable = ({ data, periodLabel }: ClientsTableProps) => {
                     </div>
                   </div>
                 </TableCell>
-                {activeUtilities.map(u => (
-                  <TableCell key={u.id} className="text-right text-sm">
+                {UTILITIES.map(u => (
+                  <TableCell key={u.id} className="text-right text-xs">
                     {formatValue(client.byUtility[u.id] || 0)}
                   </TableCell>
                 ))}
