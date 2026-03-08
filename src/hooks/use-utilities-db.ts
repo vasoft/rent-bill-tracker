@@ -282,10 +282,14 @@ export function useUtilitiesDb() {
       return;
     }
 
-    // Check all readings have indexNew > 0
-    const incomplete = currentData.some(d => d.indexNew === 0);
+    // Check metered utilities have indexNew > 0, non-metered have csp > 0
+    const incomplete = currentData.some(d => {
+      const utility = UTILITIES.find(u => u.id === d.utilityType);
+      if (utility && !utility.hasMeter) return d.csp === 0;
+      return d.indexNew === 0;
+    });
     if (incomplete) {
-      toast.error('Toate indexele noi trebuie completate înainte de închiderea perioadei!');
+      toast.error('Toate datele de consum trebuie completate înainte de închiderea perioadei!');
       return;
     }
 
@@ -293,18 +297,21 @@ export function useUtilitiesDb() {
     const rows = currentData.map(mapDbToRow);
     const withValues = await recalculateValues(rows, period);
 
-    // Save meter readings to history
-    await db.meterReadings.bulkAdd(
-      withValues.map(r => ({
-        spaceId: r.spaceId,
-        utilityType: r.utilityType,
-        period,
-        indexOld: r.indexOld,
-        indexNew: r.indexNew,
-        constant: r.constant,
-        consumption: r.consumption,
-      }))
-    );
+    // Save meter readings to history (only metered utilities)
+    const meteredRows = withValues.filter(r => r.hasMeter);
+    if (meteredRows.length > 0) {
+      await db.meterReadings.bulkAdd(
+        meteredRows.map(r => ({
+          spaceId: r.spaceId,
+          utilityType: r.utilityType,
+          period,
+          indexOld: r.indexOld,
+          indexNew: r.indexNew,
+          constant: r.constant,
+          consumption: r.consumption,
+        }))
+      );
+    }
 
     // Save distributions to history
     await db.distributions.bulkAdd(
