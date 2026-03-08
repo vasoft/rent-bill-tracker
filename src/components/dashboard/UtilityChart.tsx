@@ -6,8 +6,18 @@ interface UtilityChartProps {
   selectedPeriod: string;
 }
 
+const COLORS: Record<UtilityType, string> = {
+  EE: 'hsl(220, 70%, 50%)',
+  GN: 'hsl(38, 85%, 55%)',
+  AC: 'hsl(195, 85%, 50%)',
+  AA: 'hsl(152, 60%, 45%)',
+  AS: 'hsl(175, 60%, 45%)',
+  SM: 'hsl(280, 60%, 55%)',
+  SSV: 'hsl(330, 65%, 55%)',
+  SC: 'hsl(30, 75%, 50%)',
+};
+
 const UtilityChart = ({ chartData, selectedPeriod }: UtilityChartProps) => {
-  // Get up to 6 periods ending with selected period
   const allPeriods = Object.keys(chartData).sort();
   const selectedIdx = allPeriods.indexOf(selectedPeriod);
   const endIdx = selectedIdx >= 0 ? selectedIdx + 1 : allPeriods.length;
@@ -27,15 +37,9 @@ const UtilityChart = ({ chartData, selectedPeriod }: UtilityChartProps) => {
     return result;
   });
 
-  // Detect which utilities have data
   const activeUtilities = UTILITIES.filter(u =>
     visiblePeriods.some(p => (chartData[p]?.[u.id] || 0) > 0)
   ).map(u => u.id);
-
-  const colors: Record<UtilityType, string> = {
-    EE: '#3B82F6', GN: '#F59E0B', AC: '#06B6D4', AA: '#10B981',
-    SM: '#8B5CF6', AS: '#14B8A6', SSV: '#EC4899', SC: '#F59E0B',
-  };
 
   return (
     <div className="utility-card h-80">
@@ -51,7 +55,7 @@ const UtilityChart = ({ chartData, selectedPeriod }: UtilityChartProps) => {
           />
           <Legend formatter={(value) => UTILITIES.find(u => u.id === value)?.name || value} />
           {activeUtilities.map((utility) => (
-            <Bar key={utility} dataKey={utility} fill={colors[utility]} radius={[4, 4, 0, 0]} name={utility} />
+            <Bar key={utility} dataKey={utility} fill={COLORS[utility]} radius={[4, 4, 0, 0]} name={utility} />
           ))}
         </BarChart>
       </ResponsiveContainer>

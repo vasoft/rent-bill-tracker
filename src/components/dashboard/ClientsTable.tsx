@@ -1,4 +1,4 @@
-import { UtilityType } from '@/types/utility';
+import { UtilityType, UTILITIES } from '@/types/utility';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -17,11 +17,27 @@ interface ClientsTableProps {
   periodLabel: string;
 }
 
+const UTILITY_COLORS: Record<UtilityType, string> = {
+  EE: 'text-chart-ee',
+  GN: 'text-chart-gn',
+  AC: 'text-chart-ac',
+  AA: 'text-chart-aa',
+  AS: 'text-chart-as',
+  SM: 'text-chart-sm',
+  SSV: 'text-chart-ssv',
+  SC: 'text-chart-sc',
+};
+
 const ClientsTable = ({ data, periodLabel }: ClientsTableProps) => {
   const formatValue = (value: number) => {
     if (value === 0) return '-';
     return value.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
+
+  // Only show utility columns that have data
+  const activeUtilities = UTILITIES.filter(u =>
+    data.some(client => (client.byUtility[u.id] || 0) > 0)
+  );
 
   return (
     <div className="utility-card overflow-hidden">
@@ -34,11 +50,11 @@ const ClientsTable = ({ data, periodLabel }: ClientsTableProps) => {
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="font-semibold">Client</TableHead>
-              <TableHead className="text-right font-semibold text-chart-ee">EE</TableHead>
-              <TableHead className="text-right font-semibold text-chart-ac">AC</TableHead>
-              <TableHead className="text-right font-semibold text-chart-gn">GN</TableHead>
-              <TableHead className="text-right font-semibold text-chart-aa">AA</TableHead>
-              <TableHead className="text-right font-semibold text-chart-sm">SM</TableHead>
+              {activeUtilities.map(u => (
+                <TableHead key={u.id} className={`text-right font-semibold ${UTILITY_COLORS[u.id]}`}>
+                  {u.name}
+                </TableHead>
+              ))}
               <TableHead className="text-right font-semibold">TOTAL</TableHead>
             </TableRow>
           </TableHeader>
@@ -56,11 +72,11 @@ const ClientsTable = ({ data, periodLabel }: ClientsTableProps) => {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="text-right text-sm">{formatValue(client.byUtility.EE)}</TableCell>
-                <TableCell className="text-right text-sm">{formatValue(client.byUtility.AC)}</TableCell>
-                <TableCell className="text-right text-sm">{formatValue(client.byUtility.GN)}</TableCell>
-                <TableCell className="text-right text-sm">{formatValue(client.byUtility.AA)}</TableCell>
-                <TableCell className="text-right text-sm">{formatValue(client.byUtility.SM)}</TableCell>
+                {activeUtilities.map(u => (
+                  <TableCell key={u.id} className="text-right text-sm">
+                    {formatValue(client.byUtility[u.id] || 0)}
+                  </TableCell>
+                ))}
                 <TableCell className="text-right font-semibold text-sm">
                   {formatValue(client.total)} lei
                 </TableCell>

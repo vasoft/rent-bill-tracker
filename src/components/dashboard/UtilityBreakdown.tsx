@@ -8,6 +8,17 @@ interface UtilityBreakdownProps {
   }[];
 }
 
+const COLORS: Record<UtilityType, string> = {
+  EE: 'hsl(220, 70%, 50%)',
+  GN: 'hsl(38, 85%, 55%)',
+  AC: 'hsl(195, 85%, 50%)',
+  AA: 'hsl(152, 60%, 45%)',
+  AS: 'hsl(175, 60%, 45%)',
+  SM: 'hsl(280, 60%, 55%)',
+  SSV: 'hsl(330, 65%, 55%)',
+  SC: 'hsl(30, 75%, 50%)',
+};
+
 const UtilityBreakdown = ({ data }: UtilityBreakdownProps) => {
   const chartData = data
     .filter(u => u.totalValue > 0)
@@ -18,11 +29,6 @@ const UtilityBreakdown = ({ data }: UtilityBreakdownProps) => {
     }))
     .sort((a, b) => b.value - a.value);
 
-  const colors: Record<UtilityType, string> = {
-    EE: '#3B82F6', GN: '#F59E0B', AC: '#06B6D4', AA: '#10B981',
-    SM: '#8B5CF6', AS: '#14B8A6', SSV: '#EC4899', SC: '#F59E0B',
-  };
-
   return (
     <div className="utility-card h-80">
       <h3 className="font-semibold text-foreground mb-4">Repartizare pe Utilități</h3>
@@ -30,7 +36,7 @@ const UtilityBreakdown = ({ data }: UtilityBreakdownProps) => {
         <PieChart>
           <Pie data={chartData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
             {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={colors[entry.shortName as UtilityType]} stroke="hsl(var(--background))" strokeWidth={2} />
+              <Cell key={`cell-${index}`} fill={COLORS[entry.shortName as UtilityType]} stroke="hsl(var(--background))" strokeWidth={2} />
             ))}
           </Pie>
           <Tooltip
