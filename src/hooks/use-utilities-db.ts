@@ -105,9 +105,12 @@ export function useUtilitiesDb() {
       utilityType: rec.utilityType,
       utilityName: utility?.fullName || rec.utilityType,
       unit: utility?.unit || '',
+      hasMeter: utility?.hasMeter ?? true,
       indexOld: rec.indexOld,
       indexNew: rec.indexNew,
       constant: rec.constant,
+      isp: rec.isp ?? 0,
+      csp: rec.csp ?? 0,
       consumption: rec.consumption,
       netValue: rec.netValue,
       vatValue: rec.vatValue,
@@ -145,33 +148,62 @@ export function useUtilitiesDb() {
   const initializeConsumption = useCallback(async (period: string, utilityFilter: string) => {
     const occupiedSpaces = spaces.filter(s => s.clientId !== null);
     const utilities = utilityFilter === 'all'
-      ? UTILITIES.filter(u => u.hasMeter)
-      : UTILITIES.filter(u => u.id === utilityFilter && u.hasMeter);
+      ? UTILITIES
+      : UTILITIES.filter(u => u.id === utilityFilter);
 
     const records: DbCurrentMonth[] = [];
 
     for (const space of occupiedSpaces) {
       for (const utility of utilities) {
-        // Get last reading from DB
-        const lastReadings = await db.meterReadings
-          .where('[spaceId+utilityType+period]')
-          .between([space.id, utility.id, Dexie.minKey], [space.id, utility.id, Dexie.maxKey])
-          .toArray();
-        const lastReading = lastReadings.sort((a, b) => b.period.localeCompare(a.period))[0];
+        if (utility.hasMeter) {
+          // Metered utility: get last reading from DB
+          const lastReadings = await db.meterReadings
+            .where('[spaceId+utilityType+period]')
+            .between([space.id, utility.id, Dexie.minKey], [space.id, utility.id, Dexie.maxKey])
+            .toArray();
+          const lastReading = lastReadings.sort((a, b) => b.period.localeCompare(a.period))[0];
 
-        records.push({
-          spaceId: space.id,
-          clientId: space.clientId!,
-          utilityType: utility.id,
-          period,
-          indexOld: lastReading?.indexNew || 0,
-          indexNew: 0,
-          constant: lastReading?.constant || (utility.id === 'GN' ? lastReading?.pcs || 10.94 : 1),
-          consumption: 0,
-          netValue: 0,
-          vatValue: 0,
-          totalValue: 0,
-        });
+          records.push({
+            spaceId: space.id,
+            clientId: space.clientId!,
+            utilityType: utility.id,
+            period,
+            indexOld: lastReading?.indexNew || 0,
+            indexNew: 0,
+            constant: lastReading?.constant || (utility.id === 'GN' ? lastReading?.pcs || 10.94 : 1),
+            isp: 0,
+            csp: 0,
+            consumption: 0,
+            netValue: 0,
+            vatValue: 0,
+            totalValue: 0,
+          });
+        } else {
+          // Non-metered service: use Isp * Csp
+          // Default Isp based on service type
+          let defaultIsp = 1;
+          if (utility.id === 'SM' || utility.id === 'SSV') {
+            defaultIsp = space.area; // suprafață (mp)
+          } else if (utility.id === 'AA' || utility.id === 'AS') {
+            defaultIsp = space.persons; // nr persoane
+          }
+
+          records.push({
+            spaceId: space.id,
+            clientId: space.clientId!,
+            utilityType: utility.id,
+            period,
+            indexOld: 0,
+            indexNew: 0,
+            constant: 0,
+            isp: defaultIsp,
+            csp: 0,
+            consumption: 0,
+            netValue: 0,
+            vatValue: 0,
+            totalValue: 0,
+          });
+        }
       }
     }
 
