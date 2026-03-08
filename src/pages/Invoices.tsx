@@ -301,14 +301,25 @@ const Invoices = () => {
                     {invoice.totalValue.toLocaleString('ro-RO')} lei
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => handleViewClick(invoice)}
-                      title="Vizualizează factura"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => handleViewClick(invoice)}
+                        title="Vizualizează factura"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => setDeleteTarget(invoice)}
+                        title="Șterge factura"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
