@@ -68,18 +68,34 @@ export default function AcTable({ currentMonthData, currentPeriod, calculationTy
       .filter(r => r.hasMeter)
       .reduce((sum, r) => sum + r.meteredConsumption, 0);
 
-    // Non-metered distribution
-    const nonMeteredSpaces = spaceRows.filter(r => !r.hasMeter);
-    const totalPersonsNonMetered = nonMeteredSpaces.reduce((sum, r) => sum + r.space.persons, 0);
-    const aaDifference = Math.max(0, invoicedAaConsumption - totalMeteredAa);
-    const aaCsp = totalPersonsNonMetered > 0 ? aaDifference / totalPersonsNonMetered : 0;
+    // If no metered consumption exists, distribute entire invoiced qty to ALL spaces by persons
+    const hasMeteredConsumption = totalMeteredAa > 0;
+    const totalPersonsAll = spaceRows.reduce((sum, r) => sum + r.space.persons, 0);
+
+    let aaCsp = 0;
+    if (!hasMeteredConsumption) {
+      // No metered data: distribute everything by persons to all spaces
+      aaCsp = totalPersonsAll > 0 ? invoicedAaConsumption / totalPersonsAll : 0;
+    } else {
+      // Has metered data: distribute remainder to non-metered spaces
+      const nonMeteredSpaces = spaceRows.filter(r => !r.hasMeter);
+      const totalPersonsNonMetered = nonMeteredSpaces.reduce((sum, r) => sum + r.space.persons, 0);
+      const aaDifference = Math.max(0, invoicedAaConsumption - totalMeteredAa);
+      aaCsp = totalPersonsNonMetered > 0 ? aaDifference / totalPersonsNonMetered : 0;
+    }
 
     // Ape meteorice: Csp = invoiced / total area
     const totalArea = spaceRows.reduce((sum, r) => sum + r.space.area, 0);
     const amCsp = totalArea > 0 ? invoicedAmConsumption / totalArea : 0;
 
     return spaceRows.map(r => {
-      const alimentareApa = r.hasMeter ? r.meteredConsumption : r.space.persons * aaCsp;
+      let alimentareApa: number;
+      if (!hasMeteredConsumption) {
+        // All spaces get distribution by persons
+        alimentareApa = r.space.persons * aaCsp;
+      } else {
+        alimentareApa = r.hasMeter ? r.meteredConsumption : r.space.persons * aaCsp;
+      }
       const canalizare = alimentareApa;
       const apeMeteorie = r.space.area * amCsp;
       const taxa = canalizare + apeMeteorie;
