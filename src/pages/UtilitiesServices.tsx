@@ -545,8 +545,9 @@ const UtilitiesServices = () => {
             <div className="utility-card overflow-hidden">
               {currentUtilityFilter === 'AC' ? (
                 <AcTable
-                  currentMonthData={currentMonthData}
-                  currentPeriod={currentPeriod}
+                  acSpaceData={acSpaceData}
+                  acValueData={acValueData}
+                  acSubLines={acSubLines}
                   calculationType={calculationType}
                   isInitialized={isInitialized}
                   onEditIndex={handleEditIndex}
