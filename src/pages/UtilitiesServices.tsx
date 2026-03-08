@@ -2,8 +2,10 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Dexie from 'dexie/dist/dexie.mjs';
 import AcTable from '@/components/utilities/AcTable';
 import AaTable from '@/components/utilities/AaTable';
+import AsTable from '@/components/utilities/AsTable';
 import { useAcDistribution } from '@/hooks/use-ac-distribution';
 import { useAaDistribution } from '@/hooks/use-aa-distribution';
+import { useAsDistribution } from '@/hooks/use-as-distribution';
 import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
@@ -44,6 +46,11 @@ const UtilitiesServices = () => {
   const { aaData: aaDistData } = useAaDistribution(acSpaceData, currentPeriod);
   const [aaData, setAaData] = useState(aaDistData);
   useEffect(() => { setAaData(aaDistData); }, [aaDistData]);
+
+  // AS distribution hook (depends on A&C data - uses alimentareApa as reference)
+  const { asData: asDistData } = useAsDistribution(acSpaceData, currentPeriod);
+  const [asData, setAsData] = useState(asDistData);
+  useEffect(() => { setAsData(asDistData); }, [asDistData]);
 
   // Filters
   const [historyUtilityFilter, setHistoryUtilityFilter] = useState<string>('all');
@@ -203,10 +210,21 @@ const UtilitiesServices = () => {
         totalValue: fmt(aaData.reduce((s, r) => s + r.total, 0)),
       } as SummaryStatsData;
     }
+    if (currentUtilityFilter === 'AS') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(asData.map(r => r.spaceId)).size,
+        clientsCount: new Set(asData.map(r => r.clientId)).size,
+        totalConsumption: fmt(asData.reduce((s, r) => s + r.cantitateAlocata, 0)),
+        totalNetValue: fmt(asData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(asData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(asData.reduce((s, r) => s + r.total, 0)),
+      } as SummaryStatsData;
+    }
     // Only count rows where data has been recorded
     const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
-  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData]);
+  }, [liveCurrentMonthData, currentUtilityFilter, acSpaceData, acValueData, aaData, asData]);
 
   // All distinct utility types present in current month data
   const activeUtilityTypes = useMemo(() => {
@@ -242,10 +260,21 @@ const UtilitiesServices = () => {
         totalValue: fmt(aaData.reduce((s, r) => s + r.total, 0)),
       } as SummaryStatsData;
     }
+    if (utilityType === 'AS') {
+      const fmt = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2 });
+      return {
+        spacesCount: new Set(asData.map(r => r.spaceId)).size,
+        clientsCount: new Set(asData.map(r => r.clientId)).size,
+        totalConsumption: fmt(asData.reduce((s, r) => s + r.cantitateAlocata, 0)),
+        totalNetValue: fmt(asData.reduce((s, r) => s + r.valoareNeta, 0)),
+        totalVat: fmt(asData.reduce((s, r) => s + r.valoareTva, 0)),
+        totalValue: fmt(asData.reduce((s, r) => s + r.total, 0)),
+      } as SummaryStatsData;
+    }
     const rows = currentMonthData.filter(r => r.utilityType === utilityType);
     const withValues = await recalculateValues(rows, currentPeriod);
     return computeStats(withValues);
-  }, [currentMonthData, recalculateValues, currentPeriod, acSpaceData, acValueData, aaData]);
+  }, [currentMonthData, recalculateValues, currentPeriod, acSpaceData, acValueData, aaData, asData]);
 
   const handleConfirmUtility = async (utilityType: string) => {
     setClosingUtilityType(utilityType);
@@ -518,7 +547,7 @@ const UtilitiesServices = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && (
+                {currentUtilityFilter !== 'AC' && currentUtilityFilter !== 'AA' && currentUtilityFilter !== 'AS' && (
                 <Select value={calculationType} onValueChange={(v) => setCalculationType(v as 'consumption' | 'value')}>
                   <SelectTrigger className="w-[150px]">
                     <Calculator className="w-4 h-4 mr-2" />
@@ -595,10 +624,17 @@ const UtilitiesServices = () => {
               </div>
             )}
 
-            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0) && <SummaryStats data={currentStats} />}
+            {isInitialized && (filteredCurrentMonthData.length > 0 || currentUtilityFilter === 'AC' && acSpaceData.length > 0 || currentUtilityFilter === 'AA' && aaData.length > 0 || currentUtilityFilter === 'AS' && asData.length > 0) && <SummaryStats data={currentStats} />}
 
             <div className="utility-card overflow-hidden">
-              {currentUtilityFilter === 'AA' ? (
+              {currentUtilityFilter === 'AS' ? (
+                <AsTable
+                  asData={asData}
+                  isInitialized={isInitialized}
+                  isConfirmed={closedUtilities.has('AS')}
+                  onDataChange={setAsData}
+                />
+              ) : currentUtilityFilter === 'AA' ? (
                 <AaTable
                   aaData={aaData}
                   isInitialized={isInitialized}
