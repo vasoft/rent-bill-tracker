@@ -407,6 +407,7 @@ export function useUtilitiesDb() {
     recalculateValues,
     closePeriod,
     loadPeriodData,
+    deleteArchivedPeriod,
   };
 }
 
