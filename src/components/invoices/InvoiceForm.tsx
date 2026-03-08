@@ -140,14 +140,8 @@ const InvoiceForm = ({
   const netValue = (Number(netValueTaxable) || 0) + (Number(netValueExempt) || 0);
   const totalValue = netValue + (Number(vatValue) || 0);
 
-  // Auto-calculate TVA for non-AC invoices
-  useEffect(() => {
-    if (isAC) return;
-    const taxable = Number(netValueTaxable) || 0;
-    const rate = Number(vatRate) || 0;
-    const calculatedVat = Math.round(taxable * rate / 100 * 100) / 100;
-    form.setValue('vatValue', calculatedVat);
-  }, [netValueTaxable, vatRate, form, isAC]);
+
+
 
   // For AC: sync totals from sub-lines
   const updateAcTotals = (lines: AcSubLine[]) => {
