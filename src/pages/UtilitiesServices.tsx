@@ -90,13 +90,11 @@ const UtilitiesServices = () => {
   // Close period confirmation dialog
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
 
-  // Generate available consumption periods (last 12 months + next 3 months from now)
+  // Generate available consumption periods (exclude already closed/archived periods)
   const availableConsumptionPeriods = useMemo(() => {
     const periods = new Set<string>();
     // Add current period
     if (currentPeriod) periods.add(currentPeriod);
-    // Add all historical periods (already closed - will show as selectable but re-initializable)
-    historicalPeriods.forEach(p => periods.add(p));
     // Generate from 12 months ago to 3 months ahead
     const now = new Date();
     for (let i = -12; i <= 3; i++) {
@@ -104,6 +102,8 @@ const UtilitiesServices = () => {
       const p = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       periods.add(p);
     }
+    // Remove periods that are already archived in history
+    historicalPeriods.forEach(p => periods.delete(p));
     return Array.from(periods).sort().reverse();
   }, [currentPeriod, historicalPeriods]);
 
