@@ -140,7 +140,11 @@ const UtilitiesServices = () => {
 
   const filteredCurrentMonthData = calculatedData;
 
-  const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number): number => {
+  const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number, isp?: number, csp?: number): number => {
+    const utility = UTILITIES.find(u => u.id === utilityType);
+    if (utility && !utility.hasMeter) {
+      return (isp || 0) * (csp || 0);
+    }
     const diff = Math.max(0, indexNew - indexOld);
     switch (utilityType) {
       case 'EE': return diff * constant;
@@ -154,15 +158,17 @@ const UtilitiesServices = () => {
   const liveCurrentMonthData = useMemo(() => {
     if (!editDialogOpen || !editingRow) return filteredCurrentMonthData;
     const previewIndexNew = parseFloat(editIndexNew) || 0;
-    const previewConsumption = calculateConsumption(editingRow.utilityType, editingRow.indexOld, previewIndexNew, editingRow.constant);
+    const previewIsp = editingRow.isp;
+    const previewCsp = editingRow.csp;
+    const previewConsumption = calculateConsumption(editingRow.utilityType, editingRow.indexOld, previewIndexNew, editingRow.constant, previewIsp, previewCsp);
     return filteredCurrentMonthData.map(item =>
-      item.id === editingRow.id ? { ...item, consumption: previewConsumption, indexNew: previewIndexNew } : item
+      item.id === editingRow.id ? { ...item, consumption: previewConsumption, indexNew: previewIndexNew, isp: previewIsp, csp: previewCsp } : item
     );
   }, [filteredCurrentMonthData, editDialogOpen, editingRow, editIndexNew]);
 
   const currentStats = useMemo(() => {
-    // Only count rows where indexNew has been recorded (> 0)
-    const recordedRows = liveCurrentMonthData.filter(r => r.indexNew > 0);
+    // Only count rows where data has been recorded
+    const recordedRows = liveCurrentMonthData.filter(r => r.hasMeter ? r.indexNew > 0 : r.csp > 0);
     return computeStats(recordedRows);
   }, [liveCurrentMonthData]);
 
@@ -234,15 +240,27 @@ const UtilitiesServices = () => {
 
   const handleSaveIndex = async () => {
     if (!editingRow || !editingRow.dbId) return;
-    const newIndexNew = parseFloat(editIndexNew) || 0;
-    await updateReading(
-      editingRow.id,
-      editingRow.dbId,
-      editingRow.indexOld,
-      newIndexNew,
-      editingRow.constant,
-      editingRow.utilityType
-    );
+    const utility = UTILITIES.find(u => u.id === editingRow.utilityType);
+    if (utility && !utility.hasMeter) {
+      await updateReading(
+        editingRow.id,
+        editingRow.dbId,
+        0, 0, 0,
+        editingRow.utilityType,
+        editingRow.isp,
+        editingRow.csp
+      );
+    } else {
+      const newIndexNew = parseFloat(editIndexNew) || 0;
+      await updateReading(
+        editingRow.id,
+        editingRow.dbId,
+        editingRow.indexOld,
+        newIndexNew,
+        editingRow.constant,
+        editingRow.utilityType
+      );
+    }
     setEditDialogOpen(false);
     setEditingRow(null);
   };
@@ -286,7 +304,17 @@ const UtilitiesServices = () => {
       case 'EE': return 'Const';
       case 'GN': return 'Pcs';
       case 'AC': return '-';
+      case 'AA': case 'AS': return 'Csp';
+      case 'SM': case 'SSV': return 'Csp';
       default: return 'Csp';
+    }
+  };
+
+  const getIspLabel = (utilityType: UtilityType): string => {
+    switch (utilityType) {
+      case 'SM': case 'SSV': return 'mp';
+      case 'AA': case 'AS': return 'pers';
+      default: return 'Isp';
     }
   };
 
@@ -517,9 +545,9 @@ const UtilitiesServices = () => {
                       <TableHead>Spațiu</TableHead>
                       <TableHead>Client</TableHead>
                       <TableHead>Utilitate/Serviciu</TableHead>
-                      <TableHead className="text-right">Index Vechi</TableHead>
-                      <TableHead className="text-right">Index Nou</TableHead>
-                      <TableHead className="text-right">Const/Pcs/Csp</TableHead>
+                      <TableHead className="text-right">Index Vechi / Isp</TableHead>
+                      <TableHead className="text-right">Index Nou / Csp</TableHead>
+                      <TableHead className="text-right">Const/Pcs/Cotă</TableHead>
                       <TableHead className="text-right">Consum</TableHead>
                       <TableHead className="w-[60px]">Acțiuni</TableHead>
                     </TableRow>
@@ -528,7 +556,7 @@ const UtilitiesServices = () => {
                     {!isInitialized ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                          Apăsați "Inițializare Consum" pentru a începe înregistrarea indexelor
+                          Apăsați "Inițializare Consum" pentru a începe înregistrarea
                         </TableCell>
                       </TableRow>
                     ) : filteredCurrentMonthData.length === 0 ? (
@@ -548,16 +576,32 @@ const UtilitiesServices = () => {
                               {getUtilityDisplayName(item.utilityType)}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {item.indexOld > 0 ? item.indexOld.toLocaleString('ro-RO') : '-'}
-                          </TableCell>
-                          <TableCell className="text-right font-mono font-semibold">
-                            {item.indexNew > 0 ? item.indexNew.toLocaleString('ro-RO') : '-'}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="text-xs text-muted-foreground mr-1">{getConstantLabel(item.utilityType)}:</span>
-                            {item.constant.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
-                          </TableCell>
+                          {item.hasMeter ? (
+                            <>
+                              <TableCell className="text-right font-mono">
+                                {item.indexOld > 0 ? item.indexOld.toLocaleString('ro-RO') : '-'}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold">
+                                {item.indexNew > 0 ? item.indexNew.toLocaleString('ro-RO') : '-'}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="text-xs text-muted-foreground mr-1">{getConstantLabel(item.utilityType)}:</span>
+                                {item.constant.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell className="text-right font-mono">
+                                <span className="text-xs text-muted-foreground mr-1">{getIspLabel(item.utilityType)}:</span>
+                                {item.isp > 0 ? item.isp.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) : '-'}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-semibold">
+                                <span className="text-xs text-muted-foreground mr-1">Csp:</span>
+                                {item.csp > 0 ? item.csp.toLocaleString('ro-RO', { minimumFractionDigits: 2 }) : '-'}
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground">-</TableCell>
+                            </>
+                          )}
                           <TableCell className="text-right font-semibold">
                             {item.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {item.utilityType === 'GN' ? 'kWh' : item.unit}
                           </TableCell>
@@ -639,11 +683,13 @@ const UtilitiesServices = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Index Dialog */}
+        {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Introducere Index Nou</DialogTitle>
+              <DialogTitle>
+                {editingRow?.hasMeter ? 'Introducere Index Nou' : 'Introducere Consum Serviciu'}
+              </DialogTitle>
             </DialogHeader>
             {editingRow && (
               <div className="space-y-4 py-4">
@@ -659,63 +705,92 @@ const UtilitiesServices = () => {
                     </Badge>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Index Vechi (din istoric)</Label>
-                  <Input
-                    type="number"
-                    value={editingRow.indexOld}
-                    onChange={(e) => setEditingRow({ ...editingRow, indexOld: parseFloat(e.target.value) || 0 })}
-                  />
-                  <p className="text-xs text-muted-foreground">Preluat automat din ultimul index înregistrat</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>Index Nou *</Label>
-                  <Input
-                    type="number"
-                    value={editIndexNew}
-                    onChange={(e) => setEditIndexNew(e.target.value)}
-                    placeholder="Introduceți indexul nou"
-                    autoFocus
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{getConstantLabel(editingRow.utilityType)}</Label>
-                  <Input
-                    type="number"
-                    value={editingRow.constant}
-                    onChange={(e) => setEditingRow({ ...editingRow, constant: parseFloat(e.target.value) || 1 })}
-                    step="0.001"
-                  />
-                </div>
-                <div className="p-3 bg-muted rounded-lg space-y-1">
-                  <p className="text-sm text-muted-foreground">Consum calculat:</p>
-                  {editingRow.utilityType === 'GN' ? (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        Diferență indexe: <span className="font-semibold text-foreground">
-                          {Math.max(0, (parseFloat(editIndexNew) || 0) - editingRow.indexOld).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} Nmc
-                        </span>
+
+                {editingRow.hasMeter ? (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Index Vechi (din istoric)</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.indexOld}
+                        onChange={(e) => setEditingRow({ ...editingRow, indexOld: parseFloat(e.target.value) || 0 })}
+                      />
+                      <p className="text-xs text-muted-foreground">Preluat automat din ultimul index înregistrat</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Index Nou *</Label>
+                      <Input
+                        type="number"
+                        value={editIndexNew}
+                        onChange={(e) => setEditIndexNew(e.target.value)}
+                        placeholder="Introduceți indexul nou"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{getConstantLabel(editingRow.utilityType)}</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.constant}
+                        onChange={(e) => setEditingRow({ ...editingRow, constant: parseFloat(e.target.value) || 1 })}
+                        step="0.001"
+                      />
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg space-y-1">
+                      <p className="text-sm text-muted-foreground">Consum calculat:</p>
+                      {editingRow.utilityType === 'GN' ? (
+                        <>
+                          <p className="text-sm text-muted-foreground">
+                            Diferență indexe: <span className="font-semibold text-foreground">
+                              {Math.max(0, (parseFloat(editIndexNew) || 0) - editingRow.indexOld).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} Nmc
+                            </span>
+                          </p>
+                          <p className="text-xl font-bold">
+                            {calculateConsumption(editingRow.utilityType, editingRow.indexOld, parseFloat(editIndexNew) || 0, editingRow.constant).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} kWh
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-xl font-bold">
+                          {calculateConsumption(editingRow.utilityType, editingRow.indexOld, parseFloat(editIndexNew) || 0, editingRow.constant).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
+                        </p>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Identificator Specific (Isp) — {getIspLabel(editingRow.utilityType)}</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.isp}
+                        onChange={(e) => setEditingRow({ ...editingRow, isp: parseFloat(e.target.value) || 0 })}
+                        step="0.01"
+                        autoFocus
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {editingRow.utilityType === 'SM' || editingRow.utilityType === 'SSV'
+                          ? 'Suprafața spațiului (mp)'
+                          : 'Numărul de persoane sau unități'}
                       </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Consum Specific (Csp) — tarif/unitate</Label>
+                      <Input
+                        type="number"
+                        value={editingRow.csp || ''}
+                        onChange={(e) => setEditingRow({ ...editingRow, csp: parseFloat(e.target.value) || 0 })}
+                        step="0.01"
+                        placeholder="Introduceți tariful per unitate"
+                      />
+                    </div>
+                    <div className="p-3 bg-muted rounded-lg space-y-1">
+                      <p className="text-sm text-muted-foreground">Consum calculat (Isp × Csp):</p>
                       <p className="text-xl font-bold">
-                        {calculateConsumption(
-                          editingRow.utilityType,
-                          editingRow.indexOld,
-                          parseFloat(editIndexNew) || 0,
-                          editingRow.constant
-                        ).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} kWh
+                        {((editingRow.isp || 0) * (editingRow.csp || 0)).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
                       </p>
-                    </>
-                  ) : (
-                    <p className="text-xl font-bold">
-                      {calculateConsumption(
-                        editingRow.utilityType,
-                        editingRow.indexOld,
-                        parseFloat(editIndexNew) || 0,
-                        editingRow.constant
-                      ).toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {editingRow.unit}
-                    </p>
-                  )}
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
             <DialogFooter>

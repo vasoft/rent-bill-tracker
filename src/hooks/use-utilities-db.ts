@@ -15,9 +15,12 @@ export interface CurrentMonthRow {
   utilityType: UtilityType;
   utilityName: string;
   unit: string;
+  hasMeter: boolean;
   indexOld: number;
   indexNew: number;
   constant: number;
+  isp: number;
+  csp: number;
   consumption: number;
   netValue: number;
   vatValue: number;
@@ -40,7 +43,12 @@ export interface HistoryRow {
   totalValue: number;
 }
 
-function calculateConsumption(utilityType: UtilityType, indexOld: number, indexNew: number, constant: number): number {
+function calculateConsumption(utilityType: UtilityType, indexOld: number, indexNew: number, constant: number, isp?: number, csp?: number): number {
+  const utility = UTILITIES.find(u => u.id === utilityType);
+  if (utility && !utility.hasMeter) {
+    // Non-metered service: Isp * Csp
+    return (isp || 0) * (csp || 0);
+  }
   const diff = Math.max(0, indexNew - indexOld);
   switch (utilityType) {
     case 'EE': return diff * constant;
@@ -102,9 +110,12 @@ export function useUtilitiesDb() {
       utilityType: rec.utilityType,
       utilityName: utility?.fullName || rec.utilityType,
       unit: utility?.unit || '',
+      hasMeter: utility?.hasMeter ?? true,
       indexOld: rec.indexOld,
       indexNew: rec.indexNew,
       constant: rec.constant,
+      isp: rec.isp ?? 0,
+      csp: rec.csp ?? 0,
       consumption: rec.consumption,
       netValue: rec.netValue,
       vatValue: rec.vatValue,
@@ -142,33 +153,62 @@ export function useUtilitiesDb() {
   const initializeConsumption = useCallback(async (period: string, utilityFilter: string) => {
     const occupiedSpaces = spaces.filter(s => s.clientId !== null);
     const utilities = utilityFilter === 'all'
-      ? UTILITIES.filter(u => u.hasMeter)
-      : UTILITIES.filter(u => u.id === utilityFilter && u.hasMeter);
+      ? UTILITIES
+      : UTILITIES.filter(u => u.id === utilityFilter);
 
     const records: DbCurrentMonth[] = [];
 
     for (const space of occupiedSpaces) {
       for (const utility of utilities) {
-        // Get last reading from DB
-        const lastReadings = await db.meterReadings
-          .where('[spaceId+utilityType+period]')
-          .between([space.id, utility.id, Dexie.minKey], [space.id, utility.id, Dexie.maxKey])
-          .toArray();
-        const lastReading = lastReadings.sort((a, b) => b.period.localeCompare(a.period))[0];
+        if (utility.hasMeter) {
+          // Metered utility: get last reading from DB
+          const lastReadings = await db.meterReadings
+            .where('[spaceId+utilityType+period]')
+            .between([space.id, utility.id, Dexie.minKey], [space.id, utility.id, Dexie.maxKey])
+            .toArray();
+          const lastReading = lastReadings.sort((a, b) => b.period.localeCompare(a.period))[0];
 
-        records.push({
-          spaceId: space.id,
-          clientId: space.clientId!,
-          utilityType: utility.id,
-          period,
-          indexOld: lastReading?.indexNew || 0,
-          indexNew: 0,
-          constant: lastReading?.constant || (utility.id === 'GN' ? lastReading?.pcs || 10.94 : 1),
-          consumption: 0,
-          netValue: 0,
-          vatValue: 0,
-          totalValue: 0,
-        });
+          records.push({
+            spaceId: space.id,
+            clientId: space.clientId!,
+            utilityType: utility.id,
+            period,
+            indexOld: lastReading?.indexNew || 0,
+            indexNew: 0,
+            constant: lastReading?.constant || (utility.id === 'GN' ? lastReading?.pcs || 10.94 : 1),
+            isp: 0,
+            csp: 0,
+            consumption: 0,
+            netValue: 0,
+            vatValue: 0,
+            totalValue: 0,
+          });
+        } else {
+          // Non-metered service: use Isp * Csp
+          // Default Isp based on service type
+          let defaultIsp = 1;
+          if (utility.id === 'SM' || utility.id === 'SSV') {
+            defaultIsp = space.area; // suprafață (mp)
+          } else if (utility.id === 'AA' || utility.id === 'AS') {
+            defaultIsp = space.persons; // nr persoane
+          }
+
+          records.push({
+            spaceId: space.id,
+            clientId: space.clientId!,
+            utilityType: utility.id,
+            period,
+            indexOld: 0,
+            indexNew: 0,
+            constant: 0,
+            isp: defaultIsp,
+            csp: 0,
+            consumption: 0,
+            netValue: 0,
+            vatValue: 0,
+            totalValue: 0,
+          });
+        }
       }
     }
 
@@ -188,17 +228,28 @@ export function useUtilitiesDb() {
     indexOld: number,
     indexNew: number,
     constant: number,
-    utilityType: UtilityType
+    utilityType: UtilityType,
+    isp?: number,
+    csp?: number
   ) => {
-    const consumption = calculateConsumption(utilityType, indexOld, indexNew, constant);
-    await db.currentMonth.update(dbId, { indexOld, indexNew, constant, consumption });
-
-    setCurrentMonthData(prev => prev.map(item =>
-      item.id === rowId
-        ? { ...item, indexOld, indexNew, constant, consumption }
-        : item
-    ));
-    toast.success('Indexul a fost salvat!');
+    const consumption = calculateConsumption(utilityType, indexOld, indexNew, constant, isp, csp);
+    const utility = UTILITIES.find(u => u.id === utilityType);
+    if (utility && !utility.hasMeter) {
+      await db.currentMonth.update(dbId, { isp: isp || 0, csp: csp || 0, consumption });
+      setCurrentMonthData(prev => prev.map(item =>
+        item.id === rowId
+          ? { ...item, isp: isp || 0, csp: csp || 0, consumption }
+          : item
+      ));
+    } else {
+      await db.currentMonth.update(dbId, { indexOld, indexNew, constant, consumption });
+      setCurrentMonthData(prev => prev.map(item =>
+        item.id === rowId
+          ? { ...item, indexOld, indexNew, constant, consumption }
+          : item
+      ));
+    }
+    toast.success('Datele au fost salvate!');
   }, []);
 
   const recalculateValues = useCallback(async (data: CurrentMonthRow[], period: string): Promise<CurrentMonthRow[]> => {
@@ -231,10 +282,14 @@ export function useUtilitiesDb() {
       return;
     }
 
-    // Check all readings have indexNew > 0
-    const incomplete = currentData.some(d => d.indexNew === 0);
+    // Check metered utilities have indexNew > 0, non-metered have csp > 0
+    const incomplete = currentData.some(d => {
+      const utility = UTILITIES.find(u => u.id === d.utilityType);
+      if (utility && !utility.hasMeter) return d.csp === 0;
+      return d.indexNew === 0;
+    });
     if (incomplete) {
-      toast.error('Toate indexele noi trebuie completate înainte de închiderea perioadei!');
+      toast.error('Toate datele de consum trebuie completate înainte de închiderea perioadei!');
       return;
     }
 
@@ -242,18 +297,21 @@ export function useUtilitiesDb() {
     const rows = currentData.map(mapDbToRow);
     const withValues = await recalculateValues(rows, period);
 
-    // Save meter readings to history
-    await db.meterReadings.bulkAdd(
-      withValues.map(r => ({
-        spaceId: r.spaceId,
-        utilityType: r.utilityType,
-        period,
-        indexOld: r.indexOld,
-        indexNew: r.indexNew,
-        constant: r.constant,
-        consumption: r.consumption,
-      }))
-    );
+    // Save meter readings to history (only metered utilities)
+    const meteredRows = withValues.filter(r => r.hasMeter);
+    if (meteredRows.length > 0) {
+      await db.meterReadings.bulkAdd(
+        meteredRows.map(r => ({
+          spaceId: r.spaceId,
+          utilityType: r.utilityType,
+          period,
+          indexOld: r.indexOld,
+          indexNew: r.indexNew,
+          constant: r.constant,
+          consumption: r.consumption,
+        }))
+      );
+    }
 
     // Save distributions to history
     await db.distributions.bulkAdd(
