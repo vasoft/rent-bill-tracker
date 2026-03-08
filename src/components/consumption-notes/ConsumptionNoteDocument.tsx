@@ -1,26 +1,28 @@
-import { useState } from 'react';
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Printer, Download, Building2, MapPin, Gauge } from 'lucide-react';
-import { UTILITIES, UtilityType, MeterReading, ConsumptionDistribution } from '@/types/utility';
-import { meterReadings, spaces, consumptionDistributions, supplierInvoices } from '@/data/mockData';
+import { UTILITIES, UtilityType } from '@/types/utility';
+import type { DbDistribution } from '@/lib/db';
+
+interface ClientSpace {
+  id: string;
+  name: string;
+  area: number;
+  persons: number;
+}
 
 interface ClientData {
   id: string;
   name: string;
   type: 'PJ' | 'PF';
   spaces: string[];
-  clientSpaces: { id: string; name: string; area: number; persons: number }[];
+  clientSpaces: ClientSpace[];
   total: number;
+  distributions: DbDistribution[];
 }
 
 interface ConsumptionNoteDocumentProps {
@@ -28,136 +30,75 @@ interface ConsumptionNoteDocumentProps {
   period: string;
 }
 
+const formatNumber = (n: number, decimals = 2) =>
+  n.toLocaleString('ro-RO', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+const getUtilityColor = (type: UtilityType) => {
+  const colors: Record<UtilityType, string> = {
+    EE: 'bg-blue-100 text-blue-700 border-blue-300',
+    GN: 'bg-amber-100 text-amber-700 border-amber-300',
+    AC: 'bg-cyan-100 text-cyan-700 border-cyan-300',
+    AA: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+    SM: 'bg-purple-100 text-purple-700 border-purple-300',
+    AS: 'bg-teal-100 text-teal-700 border-teal-300',
+    SSV: 'bg-pink-100 text-pink-700 border-pink-300',
+    SC: 'bg-orange-100 text-orange-700 border-orange-300',
+  };
+  return colors[type] || 'bg-muted text-muted-foreground';
+};
+
 const ConsumptionNoteDocument = ({ client, period }: ConsumptionNoteDocumentProps) => {
-  const formatPeriod = (period: string) => {
-    const [year, month] = period.split('-');
+  const formatPeriod = (p: string) => {
+    const [year, month] = p.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
     return date.toLocaleDateString('ro-RO', { month: 'long', year: 'numeric' });
   };
 
-  const getUtilityColor = (type: UtilityType) => {
-    const colors: Record<UtilityType, string> = {
-      EE: 'bg-blue-100 text-blue-700 border-blue-300',
-      GN: 'bg-amber-100 text-amber-700 border-amber-300',
-      AC: 'bg-cyan-100 text-cyan-700 border-cyan-300',
-      AA: 'bg-emerald-100 text-emerald-700 border-emerald-300',
-      SM: 'bg-purple-100 text-purple-700 border-purple-300',
-      AS: 'bg-teal-100 text-teal-700 border-teal-300',
-      SSV: 'bg-pink-100 text-pink-700 border-pink-300',
-      SC: 'bg-orange-100 text-orange-700 border-orange-300',
-    };
-    return colors[type] || 'bg-muted text-muted-foreground';
-  };
+  const distributions = client.distributions || [];
 
-  // Get meter readings for client's spaces in this period
-  const getSpaceMeterReading = (spaceId: string, utilityType: UtilityType): MeterReading | undefined => {
-    return meterReadings.find(
-      mr => mr.spaceId === spaceId && mr.utilityType === utilityType && mr.period === period
-    );
-  };
-
-  // Get distribution for a space and utility
-  const getDistribution = (spaceId: string, utilityType: UtilityType): ConsumptionDistribution | undefined => {
-    return consumptionDistributions.find(
-      cd => cd.spaceId === spaceId && cd.utilityType === utilityType && 
-            cd.period === period && cd.clientId === client.id
-    );
-  };
-
-  // Get invoice for utility type
-  const getInvoiceForUtility = (utilityType: UtilityType) => {
-    return supplierInvoices.find(inv => inv.utilityType === utilityType && inv.period === period);
-  };
-
-  // Calculate price per unit from invoice
-  const getPricePerUnit = (utilityType: UtilityType): number => {
-    const invoice = getInvoiceForUtility(utilityType);
-    if (invoice && invoice.totalConsumption > 0) {
-      return invoice.netValue / invoice.totalConsumption;
-    }
-    return 0;
-  };
-
-  // Build detailed data per space
+  // Build per-space data
   const spaceDetails = client.clientSpaces.map(space => {
-    const utilities = UTILITIES.map(utility => {
-      const reading = getSpaceMeterReading(space.id, utility.id);
-      const distribution = getDistribution(space.id, utility.id);
-      const pricePerUnit = getPricePerUnit(utility.id);
+    const spaceDists = distributions.filter(d => d.spaceId === space.id);
+    const utilities = UTILITIES
+      .map(u => {
+        const dists = spaceDists.filter(d => d.utilityType === u.id);
+        if (dists.length === 0) return null;
+        const consumption = dists.reduce((s, d) => s + d.consumption, 0);
+        const netValue = dists.reduce((s, d) => s + d.netValue, 0);
+        const vatValue = dists.reduce((s, d) => s + d.vatValue, 0);
+        const totalValue = dists.reduce((s, d) => s + d.totalValue, 0);
+        if (totalValue === 0) return null;
+        return { utilityType: u.id, utilityName: u.name, fullName: u.fullName, unit: u.unit, consumption, netValue, vatValue, totalValue };
+      })
+      .filter(Boolean) as { utilityType: UtilityType; utilityName: string; fullName: string; unit: string; consumption: number; netValue: number; vatValue: number; totalValue: number }[];
 
-      if (!distribution || distribution.totalValue === 0) return null;
+    const spaceNetTotal = utilities.reduce((s, u) => s + u.netValue, 0);
+    const spaceVatTotal = utilities.reduce((s, u) => s + u.vatValue, 0);
+    const spaceTotalValue = utilities.reduce((s, u) => s + u.totalValue, 0);
 
-      return {
-        utilityType: utility.id,
-        utilityName: utility.name,
-        utilityFullName: utility.fullName,
-        unit: utility.unit,
-        hasMeter: utility.hasMeter,
-        indexOld: reading?.indexOld,
-        indexNew: reading?.indexNew,
-        constant: reading?.constant,
-        pcs: reading?.pcs,
-        consumption: distribution.consumption,
-        pricePerUnit,
-        netValue: distribution.netValue,
-        vatValue: distribution.vatValue,
-        totalValue: distribution.totalValue,
-        distributionMethod: distribution.distributionMethod,
-      };
-    }).filter(Boolean);
+    return { ...space, utilities, spaceNetTotal, spaceVatTotal, spaceTotalValue };
+  }).filter(s => s.utilities.length > 0);
 
-    const spaceTotal = utilities.reduce((sum, u) => sum + (u?.totalValue || 0), 0);
+  // Grand totals
+  const grandNet = spaceDetails.reduce((s, sp) => s + sp.spaceNetTotal, 0);
+  const grandVat = spaceDetails.reduce((s, sp) => s + sp.spaceVatTotal, 0);
+  const grandTotal = spaceDetails.reduce((s, sp) => s + sp.spaceTotalValue, 0);
 
-    return {
-      ...space,
-      utilities,
-      spaceTotal,
-    };
-  });
-
-  // Grand totals by utility
-  const grandTotalsByUtility = UTILITIES.map(utility => {
-    let totalConsumption = 0;
-    let totalNet = 0;
-    let totalVat = 0;
-    let totalValue = 0;
-
-    spaceDetails.forEach(space => {
-      const u = space.utilities.find(ut => ut?.utilityType === utility.id);
-      if (u) {
-        totalConsumption += u.consumption;
-        totalNet += u.netValue;
-        totalVat += u.vatValue;
-        totalValue += u.totalValue;
-      }
-    });
-
+  // Summary by utility
+  const summaryByUtility = UTILITIES.map(u => {
+    const uDists = distributions.filter(d => d.utilityType === u.id);
+    if (uDists.length === 0) return null;
+    const consumption = uDists.reduce((s, d) => s + d.consumption, 0);
+    const netValue = uDists.reduce((s, d) => s + d.netValue, 0);
+    const vatValue = uDists.reduce((s, d) => s + d.vatValue, 0);
+    const totalValue = uDists.reduce((s, d) => s + d.totalValue, 0);
     if (totalValue === 0) return null;
-
-    return {
-      ...utility,
-      totalConsumption,
-      totalNet,
-      totalVat,
-      totalValue,
-    };
-  }).filter(Boolean);
-
-  const grandTotal = grandTotalsByUtility.reduce((sum, u) => sum + (u?.totalValue || 0), 0);
-
-  const getMethodLabel = (method: string) => {
-    const labels: Record<string, string> = {
-      meter: 'Contor',
-      area: 'Suprafață',
-      persons: 'Persoane',
-      percentage: 'Procent',
-    };
-    return labels[method] || method;
-  };
+    return { ...u, consumption, netValue, vatValue, totalValue };
+  }).filter(Boolean) as (typeof UTILITIES[number] & { consumption: number; netValue: number; vatValue: number; totalValue: number })[];
 
   return (
     <div className="space-y-6 print:space-y-4">
-      {/* Document Header */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-6 print:p-4">
         <div className="flex justify-between items-start">
           <div>
@@ -198,84 +139,67 @@ const ConsumptionNoteDocument = ({ client, period }: ConsumptionNoteDocumentProp
         </div>
       </div>
 
-      {/* Detailed Consumption per Space */}
+      {/* Detailed per Space */}
       {spaceDetails.map(space => (
-        space.utilities.length > 0 && (
-          <div key={space.id} className="border border-border rounded-lg overflow-hidden">
-            <div className="bg-muted px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
-                  <Gauge className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <p className="font-semibold">{space.name}</p>
-                  <p className="text-xs text-muted-foreground">{space.area} mp • {space.persons} {space.persons === 1 ? 'persoană' : 'persoane'}</p>
-                </div>
+        <div key={space.id} className="border border-border rounded-lg overflow-hidden">
+          <div className="bg-muted px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
+                <Gauge className="w-4 h-4 text-primary" />
               </div>
-              <p className="font-bold text-lg">{space.spaceTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei</p>
+              <div>
+                <p className="font-semibold">{space.name}</p>
+                <p className="text-xs text-muted-foreground">{space.area} mp • {space.persons} {space.persons === 1 ? 'persoană' : 'persoane'}</p>
+              </div>
             </div>
-            
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 text-xs">
-                  <TableHead className="w-[140px]">Utilitate</TableHead>
-                  <TableHead className="text-center">Index Vechi</TableHead>
-                  <TableHead className="text-center">Index Nou</TableHead>
-                  <TableHead className="text-center">Cst/PCS</TableHead>
-                  <TableHead className="text-right">Consum</TableHead>
-                  <TableHead className="text-right">Preț/Unit</TableHead>
-                  <TableHead className="text-right">Net (lei)</TableHead>
-                  <TableHead className="text-right">TVA (lei)</TableHead>
-                  <TableHead className="text-right font-bold">Total (lei)</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {space.utilities.map((u, idx) => u && (
-                  <TableRow key={idx} className="text-sm">
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`text-xs ${getUtilityColor(u.utilityType)}`}>
-                          {u.utilityName}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground hidden sm:inline">
-                          ({getMethodLabel(u.distributionMethod)})
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center font-mono text-sm">
-                      {u.hasMeter && u.indexOld !== undefined ? u.indexOld.toLocaleString('ro-RO') : '-'}
-                    </TableCell>
-                    <TableCell className="text-center font-mono text-sm">
-                      {u.hasMeter && u.indexNew !== undefined ? u.indexNew.toLocaleString('ro-RO') : '-'}
-                    </TableCell>
-                    <TableCell className="text-center font-mono text-xs">
-                      {u.constant && u.constant !== 1 ? (
-                        <span>×{u.constant}</span>
-                      ) : u.pcs ? (
-                        <span title="PCS">{u.pcs}</span>
-                      ) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {u.consumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {u.unit}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground text-xs">
-                      {u.pricePerUnit > 0 ? u.pricePerUnit.toLocaleString('ro-RO', { minimumFractionDigits: 4 }) : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {u.netValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground">
-                      {u.vatValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {u.totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <p className="font-bold text-lg">{formatNumber(space.spaceTotalValue)} lei</p>
           </div>
-        )
+
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50 text-xs">
+                <TableHead>Utilitate / Serviciu</TableHead>
+                <TableHead className="text-right">Consum</TableHead>
+                <TableHead className="text-right">Val. Netă (lei)</TableHead>
+                <TableHead className="text-right">TVA (lei)</TableHead>
+                <TableHead className="text-right font-bold">Total (lei)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {space.utilities.map(u => (
+                <TableRow key={u.utilityType} className="text-sm">
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={`text-xs ${getUtilityColor(u.utilityType)}`}>
+                        {u.utilityName}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{u.fullName}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    {formatNumber(u.consumption)} {u.unit}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {formatNumber(u.netValue)}
+                  </TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {formatNumber(u.vatValue)}
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    {formatNumber(u.totalValue)}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {/* Space totals row */}
+              <TableRow className="bg-muted/30 border-t-2 border-primary/20">
+                <TableCell className="font-bold" colSpan={2}>TOTAL {space.name}</TableCell>
+                <TableCell className="text-right font-bold">{formatNumber(space.spaceNetTotal)}</TableCell>
+                <TableCell className="text-right font-bold">{formatNumber(space.spaceVatTotal)}</TableCell>
+                <TableCell className="text-right font-bold text-primary">{formatNumber(space.spaceTotalValue)}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </div>
       ))}
 
       {/* Summary by Utility */}
@@ -286,16 +210,16 @@ const ConsumptionNoteDocument = ({ client, period }: ConsumptionNoteDocumentProp
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
-              <TableHead>Utilitate/Serviciu</TableHead>
+              <TableHead>Utilitate / Serviciu</TableHead>
               <TableHead className="text-right">Consum Total</TableHead>
-              <TableHead className="text-right">Valoare Netă</TableHead>
-              <TableHead className="text-right">TVA</TableHead>
-              <TableHead className="text-right font-bold">Total</TableHead>
+              <TableHead className="text-right">Val. Netă (lei)</TableHead>
+              <TableHead className="text-right">TVA (lei)</TableHead>
+              <TableHead className="text-right font-bold">Total (lei)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {grandTotalsByUtility.map((u, idx) => u && (
-              <TableRow key={idx}>
+            {summaryByUtility.map(u => (
+              <TableRow key={u.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className={getUtilityColor(u.id)}>
@@ -305,32 +229,24 @@ const ConsumptionNoteDocument = ({ client, period }: ConsumptionNoteDocumentProp
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  {u.totalConsumption.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} {u.unit}
+                  {formatNumber(u.consumption)} {u.unit}
                 </TableCell>
-                <TableCell className="text-right">
-                  {u.totalNet.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
-                </TableCell>
-                <TableCell className="text-right text-muted-foreground">
-                  {u.totalVat.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  {u.totalValue.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
-                </TableCell>
+                <TableCell className="text-right">{formatNumber(u.netValue)}</TableCell>
+                <TableCell className="text-right text-muted-foreground">{formatNumber(u.vatValue)}</TableCell>
+                <TableCell className="text-right font-semibold">{formatNumber(u.totalValue)}</TableCell>
               </TableRow>
             ))}
             <TableRow className="bg-primary/5 border-t-2 border-primary/20">
-              <TableCell colSpan={4} className="text-right font-bold text-lg">
-                TOTAL DE PLATĂ:
-              </TableCell>
-              <TableCell className="text-right font-bold text-xl text-primary">
-                {grandTotal.toLocaleString('ro-RO', { minimumFractionDigits: 2 })} lei
-              </TableCell>
+              <TableCell colSpan={2} className="text-right font-bold text-lg">TOTAL DE PLATĂ:</TableCell>
+              <TableCell className="text-right font-bold text-lg">{formatNumber(grandNet)}</TableCell>
+              <TableCell className="text-right font-bold text-lg">{formatNumber(grandVat)}</TableCell>
+              <TableCell className="text-right font-bold text-xl text-primary">{formatNumber(grandTotal)} lei</TableCell>
             </TableRow>
           </TableBody>
         </Table>
       </div>
 
-      {/* Footer & Actions */}
+      {/* Footer */}
       <div className="flex justify-between items-center pt-4 border-t border-border print:hidden">
         <p className="text-xs text-muted-foreground">
           Document generat automat de OFF-GUS • {new Date().toLocaleString('ro-RO')}
