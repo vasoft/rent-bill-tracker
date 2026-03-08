@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { History, Calendar, Zap, Flame, Droplets, Calculator, Play, Pencil, Lock } from 'lucide-react';
+import { History, Calendar, Zap, Flame, Droplets, Calculator, Play, Pencil, Lock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import SummaryStats, { type SummaryStatsData } from '@/components/utilities/SummaryStats';
 
@@ -43,6 +43,7 @@ const UtilitiesServices = () => {
     recalculateValues,
     closePeriod,
     loadPeriodData,
+    deleteArchivedPeriod,
   } = useUtilitiesDb();
 
   // AC distribution hook
