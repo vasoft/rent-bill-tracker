@@ -5,11 +5,13 @@ import AaTable from '@/components/utilities/AaTable';
 import AsTable from '@/components/utilities/AsTable';
 import SmTable from '@/components/utilities/SmTable';
 import SsvTable from '@/components/utilities/SsvTable';
+import ScTable from '@/components/utilities/ScTable';
 import { useAcDistribution } from '@/hooks/use-ac-distribution';
 import { useAaDistribution } from '@/hooks/use-aa-distribution';
 import { useAsDistribution } from '@/hooks/use-as-distribution';
 import { useSmDistribution } from '@/hooks/use-sm-distribution';
 import { useSsvDistribution } from '@/hooks/use-ssv-distribution';
+import { useScDistribution } from '@/hooks/use-sc-distribution';
 import { db } from '@/lib/db';
 import MainLayout from '@/components/layout/MainLayout';
 import { UTILITIES, UtilityType } from '@/types/utility';
@@ -65,6 +67,11 @@ const UtilitiesServices = () => {
   const { ssvData: ssvDistData } = useSsvDistribution(acSpaceData, currentPeriod);
   const [ssvData, setSsvData] = useState(ssvDistData);
   useEffect(() => { setSsvData(ssvDistData); }, [ssvDistData]);
+
+  // SC distribution hook (depends on A&C persons data)
+  const { scData: scDistData } = useScDistribution(acSpaceData, currentPeriod);
+  const [scData, setScData] = useState(scDistData);
+  useEffect(() => { setScData(scDistData); }, [scDistData]);
 
   // Filters
   const [historyUtilityFilter, setHistoryUtilityFilter] = useState<string>('all');
