@@ -39,6 +39,7 @@ const UtilitiesServices = () => {
     setCurrentPeriod,
     getHistoryData,
     initializeConsumption,
+    initializeMissingUtility,
     updateReading,
     recalculateValues,
     closePeriod,
