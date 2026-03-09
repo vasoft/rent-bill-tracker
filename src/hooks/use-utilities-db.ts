@@ -484,6 +484,7 @@ export function useUtilitiesDb() {
     setCurrentPeriod,
     getHistoryData,
     initializeConsumption,
+    initializeMissingUtility,
     updateReading,
     recalculateValues,
     closePeriod,
