@@ -451,7 +451,7 @@ const UtilitiesServices = () => {
     if (ssvData.length > 0) types.add('SSV' as UtilityType);
     if (scData.length > 0) types.add('SC' as UtilityType);
     // Include confirmed utilities so the counter stays consistent
-    closedUtilities.forEach(ut => types.add(ut));
+    closedUtilities.forEach(ut => types.add(ut as UtilityType));
     return [...types];
   }, [currentMonthData, aaData, asData, smData, ssvData, scData, closedUtilities]);
 
