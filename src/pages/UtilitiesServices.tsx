@@ -93,21 +93,23 @@ const UtilitiesServices = () => {
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const [deleteArchiveConfirmOpen, setDeleteArchiveConfirmOpen] = useState(false);
 
-  // Generate available consumption periods (exclude already closed/archived periods)
+  // Generate available consumption periods: only current month and previous month (excluding archived)
   const availableConsumptionPeriods = useMemo(() => {
-    const periods = new Set<string>();
-    // Add current period
-    if (currentPeriod) periods.add(currentPeriod);
-    // Generate from 12 months ago to 3 months ahead
     const now = new Date();
-    for (let i = -12; i <= 3; i++) {
+    const candidates: string[] = [];
+    // Current month and previous month
+    for (let i = 0; i >= -1; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const p = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      periods.add(p);
+      candidates.push(p);
+    }
+    // Add currentPeriod from DB if not already included
+    if (currentPeriod && !candidates.includes(currentPeriod)) {
+      candidates.push(currentPeriod);
     }
     // Remove periods that are already archived in history
-    historicalPeriods.forEach(p => periods.delete(p));
-    return Array.from(periods).sort().reverse();
+    const filtered = candidates.filter(p => !historicalPeriods.includes(p));
+    return filtered.sort().reverse();
   }, [currentPeriod, historicalPeriods]);
 
   // Per-utility closing workflow - persisted in Dexie
