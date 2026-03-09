@@ -450,8 +450,10 @@ const UtilitiesServices = () => {
     if (smData.length > 0) types.add('SM' as UtilityType);
     if (ssvData.length > 0) types.add('SSV' as UtilityType);
     if (scData.length > 0) types.add('SC' as UtilityType);
+    // Include confirmed utilities so the counter stays consistent
+    closedUtilities.forEach(ut => types.add(ut as UtilityType));
     return [...types];
-  }, [currentMonthData, aaData, asData, smData, ssvData, scData]);
+  }, [currentMonthData, aaData, asData, smData, ssvData, scData, closedUtilities]);
 
   // Check if all active utilities have been confirmed closed
   const allUtilitiesClosed = useMemo(() => {
