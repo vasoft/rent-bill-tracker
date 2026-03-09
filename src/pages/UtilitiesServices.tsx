@@ -1152,7 +1152,7 @@ const UtilitiesServices = () => {
                     ) : filteredCurrentMonthData.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                          Nu există date pentru filtrele selectate
+                          Nu există rânduri pentru utilitatea selectată în această perioadă. Folosiți butonul „Inițializează {currentUtilityFilter}” pentru a popula Spațiu, Client și Acțiuni.
                         </TableCell>
                       </TableRow>
                     ) : (
