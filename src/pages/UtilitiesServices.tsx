@@ -204,6 +204,26 @@ const UtilitiesServices = () => {
 
   const filteredCurrentMonthData = calculatedData;
 
+  const hasRowsForCurrentUtility = useMemo(() => {
+    if (currentUtilityFilter === 'all') return filteredCurrentMonthData.length > 0;
+    if (currentUtilityFilter === 'AC') return acSpaceData.length > 0;
+    if (currentUtilityFilter === 'AA') return aaData.length > 0;
+    if (currentUtilityFilter === 'AS') return asData.length > 0;
+    if (currentUtilityFilter === 'SM') return smData.length > 0;
+    if (currentUtilityFilter === 'SSV') return ssvData.length > 0;
+    if (currentUtilityFilter === 'SC') return scData.length > 0;
+    return filteredCurrentMonthData.length > 0;
+  }, [
+    currentUtilityFilter,
+    filteredCurrentMonthData.length,
+    acSpaceData.length,
+    aaData.length,
+    asData.length,
+    smData.length,
+    ssvData.length,
+    scData.length,
+  ]);
+
   const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number, isp?: number, csp?: number): number => {
     const utility = UTILITIES.find(u => u.id === utilityType);
     if (utility && !utility.hasMeter) {
