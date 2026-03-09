@@ -39,6 +39,7 @@ const UtilitiesServices = () => {
     setCurrentPeriod,
     getHistoryData,
     initializeConsumption,
+    initializeMissingUtility,
     updateReading,
     recalculateValues,
     closePeriod,
@@ -202,6 +203,26 @@ const UtilitiesServices = () => {
   }, [currentMonthData, currentUtilityFilter, calculationType, currentPeriod, recalculatedData]);
 
   const filteredCurrentMonthData = calculatedData;
+
+  const hasRowsForCurrentUtility = useMemo(() => {
+    if (currentUtilityFilter === 'all') return filteredCurrentMonthData.length > 0;
+    if (currentUtilityFilter === 'AC') return acSpaceData.length > 0;
+    if (currentUtilityFilter === 'AA') return aaData.length > 0;
+    if (currentUtilityFilter === 'AS') return asData.length > 0;
+    if (currentUtilityFilter === 'SM') return smData.length > 0;
+    if (currentUtilityFilter === 'SSV') return ssvData.length > 0;
+    if (currentUtilityFilter === 'SC') return scData.length > 0;
+    return filteredCurrentMonthData.length > 0;
+  }, [
+    currentUtilityFilter,
+    filteredCurrentMonthData.length,
+    acSpaceData.length,
+    aaData.length,
+    asData.length,
+    smData.length,
+    ssvData.length,
+    scData.length,
+  ]);
 
   const calculateConsumption = (utilityType: UtilityType, indexOld: number, indexNew: number, constant: number, isp?: number, csp?: number): number => {
     const utility = UTILITIES.find(u => u.id === utilityType);
@@ -860,7 +881,19 @@ const UtilitiesServices = () => {
                     Inițializare Consum
                   </Button>
                 )}
-                {isInitialized && currentUtilityFilter !== 'all' && !closedUtilities.has(currentUtilityFilter) && (
+                {isInitialized && currentUtilityFilter !== 'all' && !hasRowsForCurrentUtility && !closedUtilities.has(currentUtilityFilter as UtilityType) && (
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={async () => {
+                      await initializeMissingUtility(currentPeriod, currentUtilityFilter as UtilityType);
+                    }}
+                  >
+                    <Play className="w-4 h-4" />
+                    Inițializează {currentUtilityFilter}
+                  </Button>
+                )}
+                {isInitialized && currentUtilityFilter !== 'all' && hasRowsForCurrentUtility && !closedUtilities.has(currentUtilityFilter) && (
                   <Button
                     variant="secondary"
                     className="gap-2"
@@ -1119,7 +1152,7 @@ const UtilitiesServices = () => {
                     ) : filteredCurrentMonthData.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                          Nu există date pentru filtrele selectate
+                          Nu există rânduri pentru utilitatea selectată în această perioadă. Folosiți butonul „Inițializează {currentUtilityFilter}” pentru a popula Spațiu, Client și Acțiuni.
                         </TableCell>
                       </TableRow>
                     ) : (
