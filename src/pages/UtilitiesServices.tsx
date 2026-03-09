@@ -881,7 +881,19 @@ const UtilitiesServices = () => {
                     Inițializare Consum
                   </Button>
                 )}
-                {isInitialized && currentUtilityFilter !== 'all' && !closedUtilities.has(currentUtilityFilter) && (
+                {isInitialized && currentUtilityFilter !== 'all' && !hasRowsForCurrentUtility && !closedUtilities.has(currentUtilityFilter as UtilityType) && (
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={async () => {
+                      await initializeMissingUtility(currentPeriod, currentUtilityFilter as UtilityType);
+                    }}
+                  >
+                    <Play className="w-4 h-4" />
+                    Inițializează {currentUtilityFilter}
+                  </Button>
+                )}
+                {isInitialized && currentUtilityFilter !== 'all' && hasRowsForCurrentUtility && !closedUtilities.has(currentUtilityFilter) && (
                   <Button
                     variant="secondary"
                     className="gap-2"
