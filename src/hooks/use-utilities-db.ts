@@ -222,6 +222,87 @@ export function useUtilitiesDb() {
     toast.success('Consumul a fost inițializat și salvat!');
   }, []);
 
+  const initializeMissingUtility = useCallback(async (period: string, utilityType: UtilityType): Promise<boolean> => {
+    const utility = UTILITIES.find(u => u.id === utilityType);
+    if (!utility) return false;
+
+    const existingCount = await db.currentMonth
+      .where('period')
+      .equals(period)
+      .and(row => row.utilityType === utilityType)
+      .count();
+
+    if (existingCount > 0) {
+      toast.info(`Utilitatea ${utilityType} este deja inițializată pentru această perioadă.`);
+      return false;
+    }
+
+    const occupiedSpaces = spaces.filter(s => s.clientId !== null);
+    const records: DbCurrentMonth[] = [];
+
+    for (const space of occupiedSpaces) {
+      if (utility.hasMeter) {
+        const lastReadings = await db.meterReadings
+          .where('[spaceId+utilityType+period]')
+          .between([space.id, utility.id, Dexie.minKey], [space.id, utility.id, Dexie.maxKey])
+          .toArray();
+        const lastReading = lastReadings.sort((a, b) => b.period.localeCompare(a.period))[0];
+
+        records.push({
+          spaceId: space.id,
+          clientId: space.clientId!,
+          utilityType: utility.id,
+          period,
+          indexOld: lastReading?.indexNew || 0,
+          indexNew: 0,
+          constant: lastReading?.constant || (utility.id === 'GN' ? lastReading?.pcs || 10.94 : 1),
+          isp: 0,
+          csp: 0,
+          consumption: 0,
+          netValue: 0,
+          vatValue: 0,
+          totalValue: 0,
+        });
+      } else {
+        let defaultIsp = 1;
+        if (utility.id === 'SM' || utility.id === 'SSV') {
+          defaultIsp = space.area;
+        } else if (utility.id === 'AA' || utility.id === 'AS') {
+          defaultIsp = space.persons;
+        }
+
+        records.push({
+          spaceId: space.id,
+          clientId: space.clientId!,
+          utilityType: utility.id,
+          period,
+          indexOld: 0,
+          indexNew: 0,
+          constant: 0,
+          isp: defaultIsp,
+          csp: 0,
+          consumption: 0,
+          netValue: 0,
+          vatValue: 0,
+          totalValue: 0,
+        });
+      }
+    }
+
+    if (records.length === 0) {
+      toast.error('Nu există spații ocupate pentru inițializare.');
+      return false;
+    }
+
+    await db.currentMonth.bulkAdd(records);
+
+    const saved = await db.currentMonth.where('period').equals(period).toArray();
+    setCurrentMonthData(saved.map(mapDbToRow));
+    setIsInitialized(true);
+    toast.success(`Utilitatea ${utilityType} a fost inițializată pentru perioada selectată.`);
+    return true;
+  }, []);
+
   const updateReading = useCallback(async (
     rowId: string,
     dbId: number,
