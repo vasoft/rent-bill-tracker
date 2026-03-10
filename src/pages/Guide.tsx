@@ -31,7 +31,7 @@ import {
 
 const Guide = () => {
   return (
-    <MainLayout>
+    <MainLayout title="Ghid de Utilizare" subtitle="Manual complet OFF-GUS">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="space-y-2">
