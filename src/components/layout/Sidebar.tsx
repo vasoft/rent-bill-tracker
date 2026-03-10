@@ -8,6 +8,7 @@ import {
   ClipboardList,
   History,
   Settings,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
   Zap
