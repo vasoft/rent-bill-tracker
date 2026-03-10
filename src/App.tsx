@@ -10,6 +10,7 @@ import Invoices from "./pages/Invoices";
 import ConsumptionNotes from "./pages/ConsumptionNotes";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import Guide from "./pages/Guide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/consumption-notes" element={<ConsumptionNotes />} />
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/guide" element={<Guide />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
