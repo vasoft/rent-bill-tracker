@@ -28,6 +28,7 @@ const navItems: NavItem[] = [
   { icon: FileText, label: 'Facturi Furnizori', path: '/invoices' },
   { icon: ClipboardList, label: 'Note de Consum', path: '/consumption-notes' },
   { icon: History, label: 'Istoric', path: '/history' },
+  { icon: BookOpen, label: 'Ghid Utilizare', path: '/guide' },
 ];
 
 const Sidebar = () => {

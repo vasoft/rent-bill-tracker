@@ -29,6 +29,7 @@ const App = () => (
           <Route path="/consumption-notes" element={<ConsumptionNotes />} />
           <Route path="/history" element={<History />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/guide" element={<Guide />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
