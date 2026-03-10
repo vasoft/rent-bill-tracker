@@ -10,6 +10,7 @@ import Invoices from "./pages/Invoices";
 import ConsumptionNotes from "./pages/ConsumptionNotes";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
+import Guide from "./pages/Guide";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
