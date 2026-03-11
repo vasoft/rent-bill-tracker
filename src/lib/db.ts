@@ -82,11 +82,11 @@ class OffGusDatabase extends Dexie {
 
   constructor() {
     super('offgus-db');
-    this.version(4).stores({
+    this.version(5).stores({
       meterReadings: '++id, spaceId, utilityType, period, [spaceId+utilityType+period]',
       distributions: '++id, spaceId, clientId, utilityType, period, [clientId+period]',
       currentMonth: '++id, spaceId, clientId, utilityType, period, [spaceId+utilityType+period]',
-      supplierInvoices: '++id, externalId, supplierId, utilityType, period, [utilityType+period]',
+      supplierInvoices: '++id, externalId, invoiceType, supplierId, utilityType, period, [utilityType+period], [invoiceType+utilityType+period]',
       confirmedUtilities: '++id, period, utilityType, [period+utilityType]',
     });
   }
