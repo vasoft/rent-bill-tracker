@@ -278,6 +278,7 @@ const Invoices = () => {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead>Tip</TableHead>
                 <TableHead>Nr. Factură</TableHead>
                 <TableHead>Furnizor</TableHead>
                 <TableHead>Utilitate</TableHead>
@@ -292,6 +293,11 @@ const Invoices = () => {
             <TableBody>
               {filteredInvoices.map((invoice) => (
                 <TableRow key={invoice.id} className="hover:bg-muted/50">
+                  <TableCell>
+                    <Badge variant="outline" className={getInvoiceTypeBadge(invoice.invoiceType)}>
+                      {invoice.invoiceType || 'FF'}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
                   <TableCell className="font-medium">{invoice.supplierName}</TableCell>
                   <TableCell>
