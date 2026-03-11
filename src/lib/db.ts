@@ -132,6 +132,7 @@ export async function seedIfEmpty() {
   await db.supplierInvoices.bulkAdd(
     mockInvoices.map(inv => ({
       externalId: inv.id,
+      invoiceType: (inv.invoiceType || 'FF') as InvoiceType,
       supplierId: inv.supplierId,
       utilityType: inv.utilityType,
       period: inv.period,
