@@ -2,6 +2,8 @@
 
 export type UtilityType = 'EE' | 'GN' | 'AC' | 'AA' | 'SM' | 'AS' | 'SSV' | 'SC';
 
+export type InvoiceType = 'FF' | 'FE' | 'FR';
+
 export interface UtilityInfo {
   id: UtilityType;
   name: string;
