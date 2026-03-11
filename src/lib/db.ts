@@ -47,6 +47,7 @@ export interface DbCurrentMonth {
 export interface DbSupplierInvoice {
   id?: number;
   externalId: string;
+  invoiceType: InvoiceType; // FF, FE, FR
   supplierId: string;
   utilityType: UtilityType;
   period: string;
