@@ -51,6 +51,7 @@ const Invoices = () => {
     db.supplierInvoices.toArray().then(dbInvoices => {
       setInvoicesList(dbInvoices.map(inv => ({
         id: inv.externalId,
+        invoiceType: inv.invoiceType || 'FF',
         supplierId: inv.supplierId,
         utilityType: inv.utilityType,
         period: inv.period,
