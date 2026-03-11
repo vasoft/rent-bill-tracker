@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,8 +15,88 @@ import {
   Download,
   Upload
 } from 'lucide-react';
+import { db } from '@/lib/db';
+import { toast } from 'sonner';
 
 const Settings = () => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const data = {
+        exportDate: new Date().toISOString(),
+        version: 5,
+        meterReadings: await db.meterReadings.toArray(),
+        distributions: await db.distributions.toArray(),
+        currentMonth: await db.currentMonth.toArray(),
+        supplierInvoices: await db.supplierInvoices.toArray(),
+        confirmedUtilities: await db.confirmedUtilities.toArray(),
+      };
+      const json = JSON.stringify(data, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `offgus-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Backup descărcat cu succes!');
+    } catch (e) {
+      toast.error('Eroare la exportul bazei de date!');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!data.meterReadings || !data.distributions) {
+        throw new Error('Fișier invalid');
+      }
+
+      // Clear all tables
+      await db.meterReadings.clear();
+      await db.distributions.clear();
+      await db.currentMonth.clear();
+      await db.supplierInvoices.clear();
+      await db.confirmedUtilities.clear();
+
+      // Import data (strip auto-increment ids)
+      if (data.meterReadings?.length) {
+        await db.meterReadings.bulkAdd(data.meterReadings.map(({ id, ...rest }: any) => rest));
+      }
+      if (data.distributions?.length) {
+        await db.distributions.bulkAdd(data.distributions.map(({ id, ...rest }: any) => rest));
+      }
+      if (data.currentMonth?.length) {
+        await db.currentMonth.bulkAdd(data.currentMonth.map(({ id, ...rest }: any) => rest));
+      }
+      if (data.supplierInvoices?.length) {
+        await db.supplierInvoices.bulkAdd(data.supplierInvoices.map(({ id, ...rest }: any) => rest));
+      }
+      if (data.confirmedUtilities?.length) {
+        await db.confirmedUtilities.bulkAdd(data.confirmedUtilities.map(({ id, ...rest }: any) => rest));
+      }
+
+      toast.success('Baza de date a fost restaurată! Reîncărcați pagina.');
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (err) {
+      toast.error('Eroare la importul fișierului! Verificați formatul.');
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <MainLayout title="Setări" subtitle="Configurarea aplicației OFF-GUS">
       <div className="max-w-3xl space-y-8 animate-slide-up">
@@ -74,24 +155,38 @@ const Settings = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div>
-                <p className="font-medium">Ultima salvare automată</p>
-                <p className="text-sm text-muted-foreground">14 Ianuarie 2026, 10:30</p>
+                <p className="font-medium">Export baza de date</p>
+                <p className="text-sm text-muted-foreground">Descarcă toate datele ca fișier JSON</p>
               </div>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2" onClick={handleExport} disabled={isExporting}>
                 <Download className="w-4 h-4" />
-                Descarcă Backup
+                {isExporting ? 'Se exportă...' : 'Descarcă Backup'}
               </Button>
             </div>
             
             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
               <div>
-                <p className="font-medium">Restaurare din fișier</p>
-                <p className="text-sm text-muted-foreground">Încarcă un backup anterior</p>
+                <p className="font-medium">Import baza de date</p>
+                <p className="text-sm text-muted-foreground">Restaurează din fișier JSON (înlocuiește datele existente)</p>
               </div>
-              <Button variant="outline" className="gap-2">
-                <Upload className="w-4 h-4" />
-                Încarcă Fișier
-              </Button>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleImport}
+                  className="hidden"
+                />
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isImporting}
+                >
+                  <Upload className="w-4 h-4" />
+                  {isImporting ? 'Se importă...' : 'Încarcă Fișier'}
+                </Button>
+              </div>
             </div>
           </div>
         </section>
