@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie/dist/dexie.mjs';
-import { type UtilityType } from '@/types/utility';
+import { type UtilityType, type InvoiceType } from '@/types/utility';
 
 // Database record types
 export interface DbMeterReading {
@@ -47,6 +47,7 @@ export interface DbCurrentMonth {
 export interface DbSupplierInvoice {
   id?: number;
   externalId: string;
+  invoiceType: InvoiceType; // FF, FE, FR
   supplierId: string;
   utilityType: UtilityType;
   period: string;
@@ -81,11 +82,11 @@ class OffGusDatabase extends Dexie {
 
   constructor() {
     super('offgus-db');
-    this.version(4).stores({
+    this.version(5).stores({
       meterReadings: '++id, spaceId, utilityType, period, [spaceId+utilityType+period]',
       distributions: '++id, spaceId, clientId, utilityType, period, [clientId+period]',
       currentMonth: '++id, spaceId, clientId, utilityType, period, [spaceId+utilityType+period]',
-      supplierInvoices: '++id, externalId, supplierId, utilityType, period, [utilityType+period]',
+      supplierInvoices: '++id, externalId, invoiceType, supplierId, utilityType, period, [utilityType+period], [invoiceType+utilityType+period]',
       confirmedUtilities: '++id, period, utilityType, [period+utilityType]',
     });
   }
@@ -131,6 +132,7 @@ export async function seedIfEmpty() {
   await db.supplierInvoices.bulkAdd(
     mockInvoices.map(inv => ({
       externalId: inv.id,
+      invoiceType: (inv.invoiceType || 'FF') as InvoiceType,
       supplierId: inv.supplierId,
       utilityType: inv.utilityType,
       period: inv.period,

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import MainLayout from '@/components/layout/MainLayout';
 import { suppliers as initialSuppliers } from '@/data/mockData';
 import { db } from '@/lib/db';
-import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo, AcSubLine } from '@/types/utility';
+import { UTILITIES, UtilityType, SupplierInvoice, Supplier, UtilityInfo, AcSubLine, InvoiceType } from '@/types/utility';
 import { type InvoiceFormSubmitData } from '@/components/invoices/InvoiceForm';
 import {
   Table, 
@@ -51,6 +51,7 @@ const Invoices = () => {
     db.supplierInvoices.toArray().then(dbInvoices => {
       setInvoicesList(dbInvoices.map(inv => ({
         id: inv.externalId,
+        invoiceType: inv.invoiceType || 'FF',
         supplierId: inv.supplierId,
         utilityType: inv.utilityType,
         period: inv.period,
@@ -109,6 +110,16 @@ const Invoices = () => {
     return colors[type] || 'bg-muted text-muted-foreground';
   };
 
+  const getInvoiceTypeBadge = (type?: InvoiceType) => {
+    const t = type || 'FF';
+    const styles: Record<InvoiceType, string> = {
+      FF: 'bg-primary/10 text-primary border-primary/30',
+      FE: 'bg-warning/10 text-warning border-warning/30',
+      FR: 'bg-accent/10 text-accent-foreground border-accent/30',
+    };
+    return styles[t];
+  };
+
   const handleAddClick = () => {
     setSelectedInvoice(null);
     setFormMode('add');
@@ -134,8 +145,10 @@ const Invoices = () => {
   const handleFormSubmit = async (data: InvoiceFormSubmitData) => {
     const externalId = `INV${Date.now()}`;
     const netValue = data.netValueTaxable + data.netValueExempt;
+    const invoiceType = (data.invoiceType || 'FF') as InvoiceType;
     const newInvoice: SupplierInvoice = {
       id: externalId,
+      invoiceType,
       supplierId: data.supplierId,
       utilityType: data.utilityType as UtilityType,
       period: data.period,
@@ -152,6 +165,7 @@ const Invoices = () => {
     };
     await db.supplierInvoices.add({
       externalId,
+      invoiceType,
       supplierId: data.supplierId,
       utilityType: data.utilityType as UtilityType,
       period: data.period,
@@ -264,6 +278,7 @@ const Invoices = () => {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
+                <TableHead>Tip</TableHead>
                 <TableHead>Nr. Factură</TableHead>
                 <TableHead>Furnizor</TableHead>
                 <TableHead>Utilitate</TableHead>
@@ -278,6 +293,11 @@ const Invoices = () => {
             <TableBody>
               {filteredInvoices.map((invoice) => (
                 <TableRow key={invoice.id} className="hover:bg-muted/50">
+                  <TableCell>
+                    <Badge variant="outline" className={getInvoiceTypeBadge(invoice.invoiceType)}>
+                      {invoice.invoiceType || 'FF'}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
                   <TableCell className="font-medium">{invoice.supplierName}</TableCell>
                   <TableCell>

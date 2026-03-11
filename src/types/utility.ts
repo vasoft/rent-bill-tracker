@@ -2,6 +2,8 @@
 
 export type UtilityType = 'EE' | 'GN' | 'AC' | 'AA' | 'SM' | 'AS' | 'SSV' | 'SC';
 
+export type InvoiceType = 'FF' | 'FE' | 'FR';
+
 export interface UtilityInfo {
   id: UtilityType;
   name: string;
@@ -50,6 +52,7 @@ export interface MeterReading {
 
 export interface SupplierInvoice {
   id: string;
+  invoiceType?: InvoiceType; // FF, FE, FR - default FF
   supplierId: string;
   utilityType: UtilityType;
   period: string;
