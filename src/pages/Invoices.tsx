@@ -135,8 +135,10 @@ const Invoices = () => {
   const handleFormSubmit = async (data: InvoiceFormSubmitData) => {
     const externalId = `INV${Date.now()}`;
     const netValue = data.netValueTaxable + data.netValueExempt;
+    const invoiceType = (data.invoiceType || 'FF') as InvoiceType;
     const newInvoice: SupplierInvoice = {
       id: externalId,
+      invoiceType,
       supplierId: data.supplierId,
       utilityType: data.utilityType as UtilityType,
       period: data.period,
@@ -153,6 +155,7 @@ const Invoices = () => {
     };
     await db.supplierInvoices.add({
       externalId,
+      invoiceType,
       supplierId: data.supplierId,
       utilityType: data.utilityType as UtilityType,
       period: data.period,
