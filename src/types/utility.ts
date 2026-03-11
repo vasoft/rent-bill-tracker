@@ -51,7 +51,7 @@ export interface MeterReading {
 }
 
 export interface SupplierInvoice {
-  id: string;
+  invoiceType?: InvoiceType; // FF, FE, FR - default FF
   supplierId: string;
   utilityType: UtilityType;
   period: string;

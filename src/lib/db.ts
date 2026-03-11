@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie/dist/dexie.mjs';
-import { type UtilityType } from '@/types/utility';
+import { type UtilityType, type InvoiceType } from '@/types/utility';
 
 // Database record types
 export interface DbMeterReading {
