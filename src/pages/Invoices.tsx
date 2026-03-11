@@ -110,6 +110,16 @@ const Invoices = () => {
     return colors[type] || 'bg-muted text-muted-foreground';
   };
 
+  const getInvoiceTypeBadge = (type?: InvoiceType) => {
+    const t = type || 'FF';
+    const styles: Record<InvoiceType, string> = {
+      FF: 'bg-primary/10 text-primary border-primary/30',
+      FE: 'bg-warning/10 text-warning border-warning/30',
+      FR: 'bg-accent/10 text-accent-foreground border-accent/30',
+    };
+    return styles[t];
+  };
+
   const handleAddClick = () => {
     setSelectedInvoice(null);
     setFormMode('add');
